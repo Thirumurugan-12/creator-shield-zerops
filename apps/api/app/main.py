@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,7 +10,7 @@ from typing import Any
 
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
@@ -27,14 +28,34 @@ from pydantic import ValidationError
 from .repositories.incidents import find_incident, next_incident_id, serialize_incident
 from .services.comparison import compare_incident
 from .services.community import seed_simulated_reports
+from .services.reports import build_report_context, generate_report_pdf
+from .services.rate_limit import InMemoryRateLimiter
+from .services.upload_security import malware_scan_hook, safe_filename, validate_upload_signature
 
 Base.metadata.create_all(bind=engine)
 seed_simulated_reports()
 storage = StorageService()
 queue = ProofQueue()
+rate_limiter = InMemoryRateLimiter()
 app = FastAPI(title="CreatorShield API", version="1.0.0")
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+cors_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",") if origin.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=cors_origins, allow_credentials=True, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "X-Requested-With"])
 app.include_router(auth_router)
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "same-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
+
+
+def enforce_rate_limit(key: str, limit: int = 10) -> None:
+    if not rate_limiter.allow(key, limit=limit):
+        raise HTTPException(429, "Too many requests. Please try again shortly.")
 
 
 @app.get("/media/{path:path}")
@@ -88,6 +109,34 @@ def get_incident(incident_id: str, db: Session = Depends(get_db), user=Depends(g
     return serialize_incident(incident)
 
 
+@app.get("/api/incidents/{incident_id}/report")
+def preview_incident_report(incident_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)) -> dict[str, Any]:
+    incident = find_incident(db, incident_id, user.id)
+    if not incident:
+        raise HTTPException(404, "Incident not found")
+    proof = db.get(ProofRecord, incident.proof_id)
+    if not proof:
+        raise HTTPException(404, "Original proof not found")
+    return build_report_context(incident, proof)
+
+
+@app.get("/api/incidents/{incident_id}/report.pdf")
+def download_incident_report(incident_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)) -> Response:
+    enforce_rate_limit(f"report:{user.id}", limit=20)
+    incident = find_incident(db, incident_id, user.id)
+    if not incident:
+        raise HTTPException(404, "Incident not found")
+    proof = db.get(ProofRecord, incident.proof_id)
+    if not proof:
+        raise HTTPException(404, "Original proof not found")
+    content = generate_report_pdf(build_report_context(incident, proof))
+    events = json.loads(incident.events_json or "[]")
+    events.append({"timestamp": datetime.now(timezone.utc).isoformat(), "message": "Evidence report downloaded"})
+    incident.events_json = json.dumps(events)
+    db.commit()
+    return Response(content=content, media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{incident.incident_id}-evidence-report.pdf"'})
+
+
 @app.post("/api/incidents", status_code=202)
 async def create_incident(
     background_tasks: BackgroundTasks,
@@ -102,6 +151,7 @@ async def create_incident(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> dict[str, Any]:
+    enforce_rate_limit(f"incident-upload:{user.id}")
     proof = find_proof(db, original_proof_id, user.id)
     if not proof:
         raise HTTPException(404, "Original proof not found")
@@ -109,21 +159,31 @@ async def create_incident(
     if file.content_type not in allowed_video and not (file.filename or "").lower().endswith((".mp4", ".mov", ".webm")):
         raise HTTPException(400, "Suspicious copy must be an MP4, MOV, or WebM file")
     try:
+        video_filename = await validate_upload_signature(file, "video")
+        malware_scan_hook(file)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+    try:
         metadata = IncidentMetadata(suspicious_username=suspicious_username, claimed_publication_date=claimed_publication_date, suspicious_url=suspicious_url, caption=caption, notes=notes)
     except ValidationError as error:
         raise HTTPException(422, detail=error.errors()) from error
     allowed_evidence = {"image/png", "image/jpeg", "application/pdf"}
     for evidence in evidence_files[:5]:
-        suffix = Path(evidence.filename or "").suffix.lower()
+        suffix = Path(safe_filename(evidence.filename, "evidence")).suffix.lower()
         if evidence.content_type not in allowed_evidence and suffix not in {".png", ".jpg", ".jpeg", ".pdf"}:
             raise HTTPException(400, "Complaint evidence must be PNG, JPG, JPEG, or PDF")
-    video_suffix = Path(file.filename or "suspicious.mp4").suffix.lower() or ".mp4"
+        try:
+            await validate_upload_signature(evidence, "evidence")
+            malware_scan_hook(evidence)
+        except ValueError as error:
+            raise HTTPException(400, str(error)) from error
+    video_suffix = Path(video_filename).suffix.lower() or ".mp4"
     video_key = f"incidents/{uuid.uuid4().hex}/suspicious{video_suffix}"
     try:
         size, video_key, digest = storage.save(file.file, video_key)
     except ValueError as error:
         raise HTTPException(413, str(error)) from error
-    incident = Incident(incident_id=next_incident_id(db), user_id=user.id, proof_id=proof.id, suspicious_storage_key=video_key, suspicious_filename=file.filename or "suspicious.mp4", suspicious_file_size=size, suspicious_sha256=digest, suspicious_username=metadata.suspicious_username, claimed_publication_date=metadata.claimed_publication_date.isoformat(), suspicious_url=metadata.suspicious_url, caption=metadata.caption, notes=metadata.notes, status="queued", stage="queued", events_json=json.dumps([{ "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Suspicious copy secured in private storage" }]))
+    incident = Incident(incident_id=next_incident_id(db), user_id=user.id, proof_id=proof.id, suspicious_storage_key=video_key, suspicious_filename=video_filename, suspicious_file_size=size, suspicious_sha256=digest, suspicious_username=metadata.suspicious_username, claimed_publication_date=metadata.claimed_publication_date.isoformat(), suspicious_url=metadata.suspicious_url, caption=metadata.caption, notes=metadata.notes, status="queued", stage="queued", events_json=json.dumps([{ "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Suspicious copy secured in private storage" }]))
     db.add(incident)
     db.flush()
     for evidence in evidence_files[:5]:
@@ -142,6 +202,7 @@ async def create_incident(
 
 @app.post("/api/proofs/{proof_id}/retry", status_code=202)
 def retry_proof(proof_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db), user=Depends(get_current_user)) -> dict[str, Any]:
+    enforce_rate_limit(f"proof-retry:{user.id}", limit=10)
     proof = find_proof(db, proof_id, user.id)
     if not proof:
         raise HTTPException(404, "Proof not found")
@@ -170,9 +231,15 @@ async def create_proof(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> dict[str, Any]:
+    enforce_rate_limit(f"proof-upload:{user.id}")
     allowed = {"video/mp4", "video/quicktime", "video/webm", "application/octet-stream"}
     if file.content_type not in allowed and not (file.filename or "").lower().endswith((".mp4", ".mov", ".webm")):
         raise HTTPException(400, "Upload an MP4, MOV, or WebM file")
+    try:
+        safe_original_filename = await validate_upload_signature(file, "video")
+        malware_scan_hook(file)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
     try:
         metadata = ProofMetadata(title=title, instagram_username=instagram_username, claimed_publication_date=claimed_publication_date, claimed_publication_url=claimed_publication_url)
     except ValidationError as error:
@@ -181,7 +248,7 @@ async def create_proof(
     username = metadata.instagram_username
     claimed_publication_date = metadata.claimed_publication_date.isoformat()
     claimed_publication_url = metadata.claimed_publication_url
-    suffix = Path(file.filename or "reel.mp4").suffix.lower() or ".mp4"
+    suffix = Path(safe_original_filename).suffix.lower() or ".mp4"
     storage_key = f"originals/{uuid.uuid4().hex}{suffix}"
     try:
         size, storage_key, sha256 = storage.save(file.file, storage_key)
@@ -194,7 +261,7 @@ async def create_proof(
     proof = ProofRecord(
         proof_id=next_proof_id(db), user_id=user.id, title=title, instagram_username=username,
         claimed_publication_date=claimed_publication_date, claimed_publication_url=claimed_publication_url,
-        caption=caption, notes=notes, original_filename=file.filename or "reel.mp4", storage_key=storage_key,
+        caption=caption, notes=notes, original_filename=safe_original_filename, storage_key=storage_key,
         file_size=size, sha256=sha256, status="processing", current_step="upload", progress=8, evidence_completeness=10,
     )
     db.add(proof)

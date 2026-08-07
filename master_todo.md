@@ -344,20 +344,20 @@ Upload secured
 
 ### Scope
 
-- [ ] Add report preview route.
-- [ ] Show report sections and evidence completeness.
-- [ ] Show missing-information warnings.
-- [ ] Generate downloadable PDF.
-- [ ] Include cover page and incident reference.
-- [ ] Include creator details and executive summary.
-- [ ] Include Creator Proof and original metadata.
-- [ ] Include suspicious-content metadata and timeline comparison.
-- [ ] Include visual, audio, transcript, and matching-keyframe evidence.
-- [ ] Include complaint extraction and suspicious indicators.
-- [ ] Include related simulated reports.
-- [ ] Include evidence file inventory, limitations, and disclaimer.
-- [ ] Add report status and generated timestamp.
-- [ ] Add report download event to activity.
+- [x] Add report preview route.
+- [x] Show report sections and evidence completeness.
+- [x] Show missing-information warnings.
+- [x] Generate downloadable PDF.
+- [x] Include cover page and incident reference.
+- [x] Include creator details and executive summary.
+- [x] Include Creator Proof and original metadata.
+- [x] Include suspicious-content metadata and timeline comparison.
+- [~] Include visual, audio, transcript, and matching-keyframe evidence; transcript and side-by-side matching keyframes remain explicit unavailable states where not configured.
+- [x] Include complaint extraction and suspicious indicators.
+- [x] Include related simulated reports.
+- [x] Include evidence file inventory, limitations, and disclaimer.
+- [x] Add report status and generated timestamp.
+- [x] Add report download event to activity.
 
 ### Required report limitation
 
@@ -367,26 +367,26 @@ This report presents technical evidence only. It does not determine copyright ow
 
 ### Exit criteria
 
-- [ ] A completed incident can generate a readable PDF without fabricated fields.
-- [ ] Missing evidence is called out instead of silently omitted.
-- [ ] Downloaded report matches the preview and contains the required disclaimer.
+- [x] A completed incident can generate a readable PDF without fabricated fields.
+- [x] Missing evidence is called out instead of silently omitted.
+- [x] Downloaded report matches the preview and contains the required disclaimer.
 
 ## Phase 13 — Security, accessibility, and quality
 
 ### Security
 
-- [ ] Validate MIME type, extension, size, and content signature.
-- [ ] Prevent path traversal and unsafe filenames.
-- [ ] Keep object storage private.
-- [ ] Add malware scanning hook for uploaded files.
-- [ ] Add rate limits for uploads and expensive processing.
-- [ ] Add authorization checks to every proof, incident, media, and report endpoint.
-- [ ] Add safe logging without leaking file contents or sensitive complaint data.
-- [ ] Review CORS and production environment defaults.
+- [x] Validate MIME type, extension, size, and content signature.
+- [x] Prevent path traversal and unsafe filenames.
+- [x] Keep object storage private.
+- [x] Add malware scanning hook for uploaded files.
+- [x] Add rate limits for uploads and expensive processing.
+- [x] Add authorization checks to every proof, incident, media, and report endpoint.
+- [x] Add safe logging without leaking file contents or sensitive complaint data.
+- [x] Review CORS and production environment defaults.
 
 ### Quality
 
-- [ ] Add backend unit tests for schemas, repositories, processing, similarity, score rules, and report generation.
+- [~] Add backend unit tests for schemas, repositories, processing, similarity, score rules, and report generation; upload-security coverage is added, broader service coverage remains.
 - [ ] Add frontend tests for form validation and status states.
 - [ ] Add end-to-end upload → process → proof test.
 - [ ] Add end-to-end incident → compare → report test.
@@ -396,7 +396,7 @@ This report presents technical evidence only. It does not determine copyright ow
 
 ### Exit criteria
 
-- [ ] No critical security or authorization findings remain.
+- [~] No critical security or authorization findings remain; full production and end-to-end review remains.
 - [ ] Core vertical slices pass in a clean Docker environment.
 - [ ] All important states have a test or documented manual verification.
 
@@ -404,16 +404,16 @@ This report presents technical evidence only. It does not determine copyright ow
 
 ### Scope
 
-- [ ] Define separate Zerops services for web, API, worker, PostgreSQL, Valkey, and object storage.
-- [ ] Add production environment variable documentation.
-- [ ] Add build and start commands for each service.
-- [ ] Add migration step before API rollout.
-- [ ] Add persistent volume/object-storage strategy.
-- [ ] Add health/readiness endpoints.
-- [ ] Add HTTPS and secure cookie configuration.
-- [ ] Add production logging and monitoring.
+- [x] Define separate Zerops services for web, API, worker, PostgreSQL, Valkey, and object storage.
+- [x] Add production environment variable documentation.
+- [x] Add build and start commands for each service.
+- [x] Add migration step before API rollout.
+- [x] Add persistent volume/object-storage strategy.
+- [x] Add health/readiness endpoints.
+- [x] Add HTTPS and secure cookie configuration.
+- [~] Add production logging and monitoring; deployment config documents the boundary, runtime verification remains.
 - [ ] Add deployment smoke test.
-- [ ] Document rollback and data backup procedure.
+- [x] Document rollback and data backup procedure.
 
 ### Exit criteria
 
@@ -449,3 +449,6 @@ This report presents technical evidence only. It does not determine copyright ow
 - Started Phase 9 comparison engine: incident analysis queue/worker, deterministic visual pHash comparison with mirrored-video analysis, duration-aware timeline scoring, local audio fingerprint comparison, persisted comparison outputs, modification indicators, and result UI with explicit transcript-unavailable handling.
 - Started Phase 10 complaint analysis: private PNG/JPG/PDF validation, local PDF extraction provider, explicit OCR-unavailable fallback, extracted complaint fields, suspicious-language rules, transparent score indicators, score bands, and incident detail presentation separating extraction from interpretation.
 - Started Phase 11 community intelligence: seeded simulated report records, explainable identifier correlation across contacts/domains/payment IDs/message fingerprints/attachment hashes/repeated wording, community counts, and clearly separated simulated-data UI with score integration.
+- Started Phase 12 evidence reporting: server-backed report preview, generated PDF download, evidence-completeness warnings, shared preview/PDF context, report activity event, technical-only disclaimer, and rendered PDF visual QA.
+- Started Phase 13 security and quality hardening: upload content-signature validation, safe filenames and storage keys, malware-scan hook, in-process upload/report rate limits, security headers, configurable CORS and secure cookies, and upload security tests.
+- Started Phase 14 Zerops release configuration: infrastructure import manifest, separate web/API/worker deployment setups, managed PostgreSQL/Valkey/private object-storage boundaries, migration-before-rollout command, production secret mapping, secure cookie/CORS configuration, release checks, and rollback guidance.

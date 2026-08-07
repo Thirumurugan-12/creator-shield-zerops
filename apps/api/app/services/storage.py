@@ -19,6 +19,7 @@ class StorageService:
         self.secret = os.getenv("MEDIA_SIGNING_SECRET", "creatorshield-local-dev-secret").encode()
 
     def signed_url(self, key: str, ttl_seconds: int = 3600) -> str:
+        self._validate_key(key)
         expires = int(time.time()) + ttl_seconds
         if self.backend == "s3":
             import boto3
@@ -29,12 +30,17 @@ class StorageService:
         return f"/media/{key}?expires={expires}&signature={signature}"
 
     def verify_signature(self, key: str, expires: int, signature: str) -> bool:
+        try:
+            self._validate_key(key)
+        except ValueError:
+            return False
         return expires >= int(time.time()) and hmac.compare_digest(signature, self._signature(key, expires))
 
     def _signature(self, key: str, expires: int) -> str:
         return hmac.new(self.secret, f"{key}:{expires}".encode(), hashlib.sha256).hexdigest()
 
     def save(self, source: BinaryIO, key: str) -> tuple[int, str, str]:
+        self._validate_key(key)
         if self.backend == "s3":
             return self._save_s3(source, key)
         target = self.root / key
@@ -51,6 +57,7 @@ class StorageService:
         return total, key, digest
 
     def delete(self, key: str) -> None:
+        self._validate_key(key)
         if self.backend == "s3":
             import boto3
 
@@ -62,10 +69,16 @@ class StorageService:
             target.unlink(missing_ok=True)
 
     def local_path(self, key: str) -> Path:
+        self._validate_key(key)
         target = (self.root / key).resolve()
         if self.root.resolve() not in target.parents:
             raise ValueError("Invalid storage key")
         return target
+
+    def _validate_key(self, key: str) -> None:
+        candidate = Path(key)
+        if candidate.is_absolute() or ".." in candidate.parts:
+            raise ValueError("Invalid storage key")
 
     def _save_s3(self, source: BinaryIO, key: str) -> tuple[int, str, str]:
         import boto3

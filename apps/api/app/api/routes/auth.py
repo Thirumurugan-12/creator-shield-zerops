@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
@@ -30,7 +32,8 @@ def get_current_user(session: str | None = Cookie(default=None, alias=SESSION_CO
 def demo_login(response: Response, db: Session = Depends(get_db)) -> AuthUser:
     user = get_or_create_demo_user(db, "maya.creates")
     db.commit()
-    response.set_cookie(SESSION_COOKIE, create_session(user.id), max_age=SESSION_MAX_AGE, httponly=True, samesite="lax", secure=False, path="/")
+    secure = os.getenv("SECURE_COOKIES", "false").lower() in {"1", "true", "yes"}
+    response.set_cookie(SESSION_COOKIE, create_session(user.id), max_age=SESSION_MAX_AGE, httponly=True, samesite="lax", secure=secure, path="/")
     return serialize_user(user)
 
 

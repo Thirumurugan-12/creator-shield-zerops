@@ -1,0 +1,30 @@
+# Infrastructure manifest for the CreatorShield Zerops project.
+# Review service sizing, regions, and secret values before importing.
+project:
+  name: creatorshield
+  description: CreatorShield evidence processing platform
+  corePackage: SERIOUS
+  tags:
+    - creatorshield
+    - evidence
+services:
+  - hostname: web
+    type: nodejs@22
+    minContainers: 1
+    maxContainers: 2
+  - hostname: api
+    type: python@3.12
+    minContainers: 1
+    maxContainers: 3
+  - hostname: worker
+    type: python@3.12
+    minContainers: 1
+    maxContainers: 2
+  - hostname: db
+    type: postgresql:ha@16
+  - hostname: cache
+    type: valkey@7.2
+  - hostname: storage
+    type: object-storage
+    objectStorageSize: 20
+    objectStoragePolicy: private

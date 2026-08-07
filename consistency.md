@@ -103,4 +103,8 @@ Upload secured
 - Transcript extraction remains an explicit unavailable state until a provider is configured; side-by-side matching keyframes and advanced crop, watermark, speed, and color indicators are still pending.
 - Complaint originals remain private evidence files; extracted complaint fields and suspicion indicators are persisted separately. Local PDF text extraction is supported, while image OCR remains an explicit unavailable state.
 - Community intelligence is simulated development data only. It must be labelled in the UI, kept separate from uploaded evidence, and explain the exact correlating identifier before affecting a review score.
+- Evidence reports must use the same persisted incident context for preview and PDF download, call out missing information, include the technical-only disclaimer, and record a download activity event.
+- Uploads must pass extension, content-signature, size, safe-filename, and storage-key checks before persistence. Malware scanning is an explicit integration hook until a scanner is configured.
+- Production deployments must set `SECURE_COOKIES=true`, strong session/media secrets, and an explicit `CORS_ORIGINS` list. Local development may use HTTP-only cookies over localhost with `SECURE_COOKIES=false`.
+- Zerops deployment uses `zerops-import.yaml` for infrastructure and `zerops.yaml` for application pipelines. Do not mark production deployment complete until the authenticated project smoke test passes.
 - Docker Compose has been configured but requires a running Docker daemon for container execution.

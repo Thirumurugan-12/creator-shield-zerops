@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: creatorshield
+      POSTGRES_USER: creatorshield
+      POSTGRES_PASSWORD: creatorshield
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U creatorshield -d creatorshield"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  valkey:
+    image: valkey/valkey:8-alpine
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  api:
+    build: ./apps/api
+    environment:
+      DATABASE_URL: postgresql+psycopg://creatorshield:creatorshield@postgres:5432/creatorshield
+      REDIS_URL: redis://valkey:6379/0
+      STORAGE_BACKEND: local
+      STORAGE_PATH: /data/uploads
+      MEDIA_SIGNING_SECRET: local-compose-change-me
+      SESSION_SECRET: local-compose-session-change-me
+    volumes:
+      - creatorshield-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+  worker:
+    build: ./apps/api
+    command: ["python", "-m", "app.worker"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://creatorshield:creatorshield@postgres:5432/creatorshield
+      REDIS_URL: redis://valkey:6379/0
+      STORAGE_BACKEND: local
+      STORAGE_PATH: /data/uploads
+      MEDIA_SIGNING_SECRET: local-compose-change-me
+      SESSION_SECRET: local-compose-session-change-me
+    volumes:
+      - creatorshield-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+  web:
+    build: ./apps/web
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+volumes:
+  creatorshield-data:
+  postgres-data:
+  valkey-data:

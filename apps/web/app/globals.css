@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root{--background:38 25% 97%;--foreground:222 22% 12%;--card:0 0% 100%;--primary:222 47% 20%;--primary-foreground:0 0% 100%;--muted:35 18% 93%;--muted-foreground:220 10% 43%;--border:35 14% 87%;--status-secured:145 55% 36%;--status-processing:210 75% 48%;--status-review:38 90% 42%;--status-high-risk:0 68% 48%;--status-critical:0 65% 38%;--evidence-match:210 75% 48%;--evidence-neutral:220 10% 55%}
+.dark{--background:225 18% 9%;--foreground:220 14% 93%;--card:225 17% 12%;--primary:210 80% 65%;--primary-foreground:225 18% 9%;--muted:225 14% 17%;--muted-foreground:220 10% 65%;--border:225 12% 24%}
+*{border-color:hsl(var(--border))} body{background:hsl(var(--background));color:hsl(var(--foreground));font-family:Arial, sans-serif} .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}

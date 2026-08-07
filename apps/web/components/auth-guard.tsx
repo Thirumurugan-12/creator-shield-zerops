@@ -1,0 +1,3 @@
+"use client";
+import {useEffect} from "react";import {usePathname,useRouter} from "next/navigation";import {useQuery} from "@tanstack/react-query";import {getMe} from "../lib/api";import {LoadingState} from "./async-state";
+export function AuthGuard({children}:{children:React.ReactNode}){const router=useRouter();const path=usePathname();const session=useQuery({queryKey:["auth","me"],queryFn:getMe,retry:false});useEffect(()=>{if(session.isError)router.replace(`/login?next=${encodeURIComponent(path)}`)},[path,router,session.isError]);if(session.isPending)return <LoadingState label="Checking secure session…"/>;if(session.isError)return <LoadingState label="Redirecting to sign in…"/>;return <>{children}</>}

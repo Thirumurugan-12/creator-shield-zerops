@@ -7,7 +7,7 @@ zerops:
       deployFiles: .
       addToRunPrepare: ./docker-compose.zerops-3c.yml
     run:
-      base: docker@26.1
+      base: alpine/docker@26.1.5
       prepareCommands:
         - docker compose -f /var/www/docker-compose.zerops-3c.yml build app
       start: docker compose -f /var/www/docker-compose.zerops-3c.yml up --force-recreate app

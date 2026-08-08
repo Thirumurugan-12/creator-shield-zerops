@@ -49,6 +49,8 @@ zerops:
         - port: 3000
           httpSupport: true
 
+  # Native Python API service. Runtime images must not run apt-get; optional
+  # media tooling is detected by the application when already available.
   - setup: api
     build:
       base: python@3.12

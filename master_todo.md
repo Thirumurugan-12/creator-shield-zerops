@@ -484,6 +484,7 @@ This report presents technical evidence only. It does not determine copyright ow
 - Changed native Zerops API/worker media to the private `storage` service and added S3 object materialization for processing and comparison; pipeline `ktYSpnsJSRC7Q90tuAcI3Q` completed for commit `3b9096e4`.
 - Fixed the live Zerops topology: created private `storage`, created single-node `valkey`, created Python `worker`, switched deployment references from the missing `cache` service, added `/api/health`, and hardened FFmpeg/FFprobe runtime resolution.
 - Fixed Zerops S3 upload failures caused by the unsupported KMS-only server-side-encryption flag; uploads now use native bucket encryption.
+- Fixed the live Zerops worker OOM by increasing its autoscaling RAM floor from 0.125 GB to 0.5 GB (maximum 1 GB), then redeployed successfully.
 ## 2026-08-08 deployment fix
 
 - Hardened S3 configuration fallback so unresolved Zerops placeholders cannot produce an unhandled upload error; the API now safely falls back to local storage until valid object-storage variables are available.

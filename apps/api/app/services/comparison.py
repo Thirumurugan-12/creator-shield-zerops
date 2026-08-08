@@ -32,7 +32,21 @@ def _frame_hashes(path: Path, mirrored: bool = False) -> list[Any]:
     from PIL import Image, ImageOps
     with tempfile.TemporaryDirectory() as directory:
         pattern = str(Path(directory) / "frame-%04d.jpg")
-        subprocess.run([media_binary("ffmpeg"), "-hide_banner", "-loglevel", "error", "-i", str(path), "-vf", "fps=1", "-q:v", "3", "-y", pattern], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            subprocess.run([media_binary("ffmpeg"), "-hide_banner", "-loglevel", "error", "-i", str(path), "-vf", "fps=1", "-q:v", "3", "-y", pattern], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except Exception:
+            import av
+
+            container = av.open(str(path))
+            video = next((stream for stream in container.streams if stream.type == "video"), None)
+            if video is None:
+                raise ValueError("No video stream found")
+            next_timestamp = 0.0
+            for frame in container.decode(video=0):
+                timestamp = float(frame.time or 0.0)
+                if timestamp + 0.001 >= next_timestamp:
+                    frame.to_image().save(Path(directory) / f"frame-{len(list(Path(directory).glob('frame-*.jpg'))):04d}.jpg", quality=85)
+                    next_timestamp += 1.0
         hashes=[]
         for frame in sorted(Path(directory).glob("frame-*.jpg")):
             with Image.open(frame) as image:

@@ -30,6 +30,7 @@ services:
       STORAGE_PATH: /data/uploads
       MEDIA_SIGNING_SECRET: local-compose-change-me
       SESSION_SECRET: local-compose-session-change-me
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
     volumes:
       - creatorshield-data:/data
     depends_on:
@@ -63,7 +64,7 @@ services:
     depends_on:
       - api
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3000}:3000"
 volumes:
   creatorshield-data:
   postgres-data:

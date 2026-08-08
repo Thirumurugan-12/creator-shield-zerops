@@ -1,7 +1,9 @@
 export {cn} from "../lib/utils";
 export {Button} from "./ui/button";
 export {Badge} from "./ui/badge";
-export {Card} from "./ui/card";
+export {Card,CardHeader,CardTitle,CardDescription,CardContent,CardFooter} from "./ui/card";
+export {Avatar,AvatarFallback,AvatarImage} from "./ui/avatar";
+export {DropdownMenu,DropdownMenuTrigger,DropdownMenuContent,DropdownMenuItem,DropdownMenuLabel,DropdownMenuSeparator} from "./ui/dropdown-menu";
 export {Input} from "./ui/input";
 export {Textarea} from "./ui/textarea";
 export {Progress} from "./ui/progress";
@@ -9,3 +11,4 @@ export {Skeleton} from "./ui/skeleton";
 export {Separator} from "./ui/separator";
 export {Table,TableHeader,TableBody,TableRow,TableHead,TableCell} from "./ui/table";
 export {Tabs,TabsList,TabsTrigger,TabsContent} from "./ui/tabs";
+export {RiskChart} from "./risk-chart";

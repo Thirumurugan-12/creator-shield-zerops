@@ -390,15 +390,15 @@ This report presents technical evidence only. It does not determine copyright ow
 - [ ] Add frontend tests for form validation and status states.
 - [ ] Add end-to-end upload → process → proof test.
 - [ ] Add end-to-end incident → compare → report test.
-- [ ] Add browser smoke tests for responsive layouts.
+- [x] Add browser smoke tests for responsive layouts.
 - [ ] Add accessibility checks for keyboard navigation, labels, focus, and contrast.
 - [ ] Add structured logs and error monitoring.
 
 ### Exit criteria
 
 - [~] No critical security or authorization findings remain; full production and end-to-end review remains.
-- [ ] Core vertical slices pass in a clean Docker environment.
-- [ ] All important states have a test or documented manual verification.
+- [x] Core vertical slices pass in a clean Docker environment.
+- [x] All important states have a test or documented manual verification.
 
 ## Phase 14 — Zerops deployment and release
 
@@ -421,13 +421,21 @@ This report presents technical evidence only. It does not determine copyright ow
 - [ ] A production upload can be processed into a Creator Proof.
 - [ ] Logs, health checks, and persisted data are available after redeploy.
 
+## Hackathon readiness increment — 2026-08-07
+
+- [x] Replace Reports, Community Intelligence, and Settings placeholders with functional authenticated pages.
+- [x] Add judge-facing report index, community signal index, simulated-data disclaimer, and appearance controls.
+- [x] Add Zerops challenge runbook covering service topology, deploy order, secrets, demo path, submission evidence, and rollback.
+- [x] Add GitHub Actions CI for backend tests and frontend production builds.
+- [ ] Execute an authenticated Zerops project deployment smoke test; requires the project credentials and public hostnames.
+
 ## Current repository verification
 
 - [x] `docker compose config` passes.
 - [x] `python3 -m pytest -q apps/api/tests/test_health.py` passes.
 - [x] `python3 -m compileall -q apps/api/app` passes.
 - [x] `npm run build` passes in `apps/web`.
-- [ ] Docker Compose runtime smoke test pending because Docker daemon must be running.
+- [x] Docker Compose runtime smoke test passes with web on host port 3001 when host port 3000 is occupied.
 
 ## Change log
 

@@ -56,7 +56,7 @@ zerops:
     build:
       base: python@3.12
       buildCommands:
-        - pip install --target apps/api/.zerops-deps -r apps/api/requirements.txt
+        - python -m pip install --no-cache-dir --target apps/api/.zerops-deps -r apps/api/requirements.txt
       deployFiles:
         - apps/api
         - apps/api/start-zerops.sh
@@ -85,7 +85,7 @@ zerops:
     build:
       base: python@3.12
       buildCommands:
-        - pip install --target apps/api/.zerops-deps -r apps/api/requirements.txt
+        - python -m pip install --no-cache-dir --target apps/api/.zerops-deps -r apps/api/requirements.txt
       deployFiles:
         - apps/api
     run:

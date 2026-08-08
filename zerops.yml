@@ -30,16 +30,15 @@ zerops:
     build:
       base: nodejs@22
       buildCommands:
-        - cd apps/web && npm ci --no-audit --no-fund && npm run build
+        - cd apps/web && npm install --no-audit --no-fund --ignore-scripts --prefer-offline
       deployFiles:
-        - apps/web/.next
         - apps/web/public
         - apps/web/package.json
         - apps/web/node_modules
         - apps/web/next.config.ts
     run:
       base: nodejs@22
-      start: cd /var/www/apps/web && npm run start
+      start: cd /var/www/apps/web && npm run dev -- --hostname 0.0.0.0 --port 3000
       envVariables:
         NODE_ENV: production
         NEXT_PUBLIC_API_URL: ${CREATORSHIELD_API_URL}

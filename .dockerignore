@@ -8,7 +8,6 @@ artifacts
 .ruff_cache
 *.log
 *.tsbuildinfo
-Dockerfile*
 docker-compose*.yml
 zerops*.yml
 zerops*.yaml

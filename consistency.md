@@ -134,3 +134,4 @@ Upload secured
 - Zerops worker startup must use `/bin/sh /var/www/apps/api/start-worker-zerops.sh`; Zerops executes `run.start` directly and does not interpret `cd` as a shell builtin.
 - Worker media downloads retry four times with exponential backoff because private object storage may briefly lag after upload.
 - Zerops media uploads use single-request S3 PUT rather than multipart upload for reliable object visibility to the worker.
+- Newly uploaded source media is mirrored in PostgreSQL as a bounded fallback so worker comparison remains operable if private object storage cannot immediately read the object.

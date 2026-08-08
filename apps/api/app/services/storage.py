@@ -94,23 +94,35 @@ class StorageService:
         self._validate_key(key)
         with tempfile.NamedTemporaryFile(suffix=Path(key).suffix) as temporary:
             client = boto3.client("s3", endpoint_url=os.getenv("S3_ENDPOINT_URL") or None)
-            last_error: Exception | None = None
-            for attempt in range(4):
-                try:
+            try:
+                last_error: Exception | None = None
+                for attempt in range(4):
+                    try:
+                        temporary.seek(0)
+                        temporary.truncate(0)
+                        client.download_fileobj(os.environ["S3_BUCKET"], key, temporary)
+                        last_error = None
+                        break
+                    except Exception as error:
+                        last_error = error
+                        if attempt == 3:
+                            break
+                        time.sleep(2**attempt)
+                if last_error is not None:
+                    raise last_error
+            except Exception as s3_error:
+                # The API mirrors newly uploaded media in PostgreSQL so a
+                # worker can continue when object storage visibility lags.
+                from ..db.session import SessionLocal
+                from ..models.entities import MediaBlob
+
+                with SessionLocal() as db:
+                    blob = db.get(MediaBlob, key)
+                    if not blob:
+                        raise s3_error
                     temporary.seek(0)
                     temporary.truncate(0)
-                    client.download_fileobj(os.environ["S3_BUCKET"], key, temporary)
-                    last_error = None
-                    break
-                except Exception as error:
-                    last_error = error
-                    if attempt == 3:
-                        raise
-                    # Zerops Object Storage can briefly lag after a successful
-                    # upload. Retry before marking a comparison as failed.
-                    time.sleep(2**attempt)
-            if last_error is not None:
-                raise last_error
+                    temporary.write(blob.payload)
             temporary.flush()
             yield Path(temporary.name)
 

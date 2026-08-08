@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from .db.base import Base
 from .db.session import SessionLocal, engine, get_db
-from .models.entities import Incident, IncidentEvidence, ProcessingJob, ProofRecord
+from .models.entities import Incident, IncidentEvidence, MediaBlob, ProcessingJob, ProofRecord
 from .repositories.proofs import add_event, get_or_create_demo_user, get_proof as find_proof, list_proofs as query_proofs, next_proof_id, serialize_proof
 from .services.queue import ProofQueue
 from .services.storage import StorageService
@@ -73,6 +73,10 @@ def get_private_media(path: str, expires: int = Query(...), signature: str = Que
 def health(db: Session = Depends(get_db)) -> dict[str, str]:
     db.execute(select(1))
     return {"status": "ok", "storage_backend": storage.backend}
+
+
+def mirror_media(db: Session, key: str, payload: bytes) -> None:
+    db.merge(MediaBlob(storage_key=key, payload=payload))
 
 
 @app.get("/api/proofs")
@@ -181,19 +185,27 @@ async def create_incident(
     video_suffix = Path(video_filename).suffix.lower() or ".mp4"
     video_key = f"incidents/{uuid.uuid4().hex}/suspicious{video_suffix}"
     try:
+        file.file.seek(0)
+        video_payload = file.file.read()
+        file.file.seek(0)
         size, video_key, digest = storage.save(file.file, video_key)
     except ValueError as error:
         raise HTTPException(413, str(error)) from error
     incident = Incident(incident_id=next_incident_id(db), user_id=user.id, proof_id=proof.id, suspicious_storage_key=video_key, suspicious_filename=video_filename, suspicious_file_size=size, suspicious_sha256=digest, suspicious_username=metadata.suspicious_username, claimed_publication_date=metadata.claimed_publication_date.isoformat(), suspicious_url=metadata.suspicious_url, caption=metadata.caption, notes=metadata.notes, status="queued", stage="queued", events_json=json.dumps([{ "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Suspicious copy secured in private storage" }]))
     db.add(incident)
+    mirror_media(db, video_key, video_payload)
     db.flush()
     for evidence in evidence_files[:5]:
         evidence_key = f"incidents/{incident.incident_id}/{uuid.uuid4().hex}-{Path(evidence.filename or 'evidence').name}"
         try:
+            evidence.file.seek(0)
+            evidence_payload = evidence.file.read()
+            evidence.file.seek(0)
             evidence_size, evidence_key, evidence_digest = storage.save(evidence.file, evidence_key)
         except ValueError as error:
             raise HTTPException(413, str(error)) from error
         db.add(IncidentEvidence(incident_id=incident.id, storage_key=evidence_key, filename=evidence.filename or "evidence", content_type=evidence.content_type or "application/octet-stream", file_size=evidence_size, sha256=evidence_digest))
+        mirror_media(db, evidence_key, evidence_payload)
     db.commit()
     db.refresh(incident)
     if not queue.enqueue_incident(incident.incident_id):
@@ -252,6 +264,9 @@ async def create_proof(
     suffix = Path(safe_original_filename).suffix.lower() or ".mp4"
     storage_key = f"originals/{uuid.uuid4().hex}{suffix}"
     try:
+        file.file.seek(0)
+        video_payload = file.file.read()
+        file.file.seek(0)
         size, storage_key, sha256 = storage.save(file.file, storage_key)
     except ValueError as error:
         raise HTTPException(413, str(error)) from error
@@ -266,6 +281,7 @@ async def create_proof(
         file_size=size, sha256=sha256, status="processing", current_step="upload", progress=8, evidence_completeness=10,
     )
     db.add(proof)
+    mirror_media(db, storage_key, video_payload)
     db.flush()
     add_event(db, proof, "Upload secured in private storage")
     job = ProcessingJob(proof_id=proof.id, status="queued")

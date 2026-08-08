@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Float, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Float, LargeBinary, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..db.base import Base
@@ -66,6 +66,16 @@ class ProcessingJob(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     proof: Mapped[ProofRecord] = relationship(back_populates="jobs")
+
+
+class MediaBlob(Base):
+    """Durable fallback mirror for media when private object storage lags."""
+
+    __tablename__ = "media_blobs"
+
+    storage_key: Mapped[str] = mapped_column(String(500), primary_key=True)
+    payload: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class ProcessingEvent(Base):

@@ -1,4 +1,5 @@
 # Zerops deployment configuration. Keep this filename at repository root;
+# GitHub-connected pipelines deploy from the main branch.
 # Zerops GitHub pipelines discover zerops.yml automatically.
 zerops:
   - setup: app

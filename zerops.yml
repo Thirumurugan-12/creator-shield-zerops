@@ -1,6 +1,29 @@
 # Zerops deployment configuration. Keep this filename at repository root;
 # Zerops GitHub pipelines discover zerops.yml automatically.
 zerops:
+  - setup: app
+    build:
+      base: nodejs@22
+      deployFiles: .
+      addToRunPrepare: ./docker-compose.zerops-3c.yml
+    run:
+      base: docker@26.1
+      prepareCommands:
+        - docker compose -f /var/www/docker-compose.zerops-3c.yml build app
+      start: docker compose -f /var/www/docker-compose.zerops-3c.yml up --force-recreate app
+      envVariables:
+        DATABASE_URL: ${db_connectionString}
+        REDIS_URL: ${cache_connectionString}
+        STORAGE_BACKEND: local
+        STORAGE_PATH: /data/uploads
+        MEDIA_SIGNING_SECRET: ${CREATORSHIELD_MEDIA_SIGNING_SECRET}
+        SESSION_SECRET: ${CREATORSHIELD_SESSION_SECRET}
+        CORS_ORIGINS: http://localhost:3000
+        SECURE_COOKIES: "false"
+      ports:
+        - port: 3000
+          httpSupport: true
+
   - setup: web
     build:
       base: nodejs@22

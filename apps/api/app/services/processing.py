@@ -21,6 +21,13 @@ def _run(command: list[str], *, output: bool = True) -> subprocess.CompletedProc
     return subprocess.run(command, check=True, stdout=subprocess.PIPE if output else subprocess.DEVNULL, stderr=subprocess.PIPE)
 
 
+def perceptual_hash(image) -> str:
+    grayscale = image.convert("L").resize((8, 8))
+    pixels = list(grayscale.getdata())
+    average = sum(pixels) / len(pixels)
+    return "".join("1" if pixel >= average else "0" for pixel in pixels)
+
+
 def extract_metadata(path: Path) -> dict:
     result = _run(["ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)])
     payload = json.loads(result.stdout)
@@ -35,7 +42,6 @@ def extract_metadata(path: Path) -> dict:
 
 def extract_keyframes(path: Path, proof_id: str) -> list[dict[str, str | float]]:
     from PIL import Image
-    import imagehash
 
     with tempfile.TemporaryDirectory() as directory:
         output_pattern = str(Path(directory) / "frame-%04d.jpg")
@@ -43,7 +49,7 @@ def extract_keyframes(path: Path, proof_id: str) -> list[dict[str, str | float]]
         frames: list[dict[str, str | float]] = []
         for index, frame in enumerate(sorted(Path(directory).glob("frame-*.jpg"))):
             with Image.open(frame) as image:
-                digest = str(imagehash.phash(image))
+                digest = perceptual_hash(image)
             key = f"keyframes/{proof_id}/frame-{index:04d}.jpg"
             with frame.open("rb") as source:
                 storage.save(source, key)

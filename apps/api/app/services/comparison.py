@@ -17,22 +17,32 @@ from .storage import StorageService
 
 storage = StorageService()
 
+
+def _hash_distance(left: str, right: str) -> int:
+    return sum(a != b for a, b in zip(left, right))
+
+
+def _perceptual_hash(image) -> str:
+    grayscale = image.convert("L").resize((8, 8))
+    pixels = list(grayscale.getdata())
+    average = sum(pixels) / len(pixels)
+    return "".join("1" if pixel >= average else "0" for pixel in pixels)
+
 def _frame_hashes(path: Path, mirrored: bool = False) -> list[Any]:
     from PIL import Image, ImageOps
-    import imagehash
     with tempfile.TemporaryDirectory() as directory:
         pattern = str(Path(directory) / "frame-%04d.jpg")
         subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", str(path), "-vf", "fps=1", "-q:v", "3", "-y", pattern], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         hashes=[]
         for frame in sorted(Path(directory).glob("frame-*.jpg")):
             with Image.open(frame) as image:
-                hashes.append(imagehash.phash(ImageOps.mirror(image) if mirrored else image))
+                hashes.append(_perceptual_hash(ImageOps.mirror(image) if mirrored else image))
         return hashes
 
-def _visual_score(original: list[imagehash.ImageHash], suspicious: list[imagehash.ImageHash]) -> tuple[float, int]:
+def _visual_score(original: list[str], suspicious: list[str]) -> tuple[float, int]:
     if not original or not suspicious:
         return 0.0, 0
-    distances=[min(item - candidate for candidate in original) for item in suspicious]
+    distances=[min(_hash_distance(item, candidate) for candidate in original) for item in suspicious]
     matches=sum(distance <= 12 for distance in distances)
     score=sum(max(0.0, 100.0-(distance/64.0*100.0)) for distance in distances)/len(distances)
     return round(score,2), matches

@@ -37,7 +37,7 @@ zerops:
         - apps/web/next.config.ts
     run:
       base: nodejs@22
-      start: cd /var/www/apps/web && npm run dev -- --hostname 0.0.0.0 --port 3000
+      start: /var/www/apps/web/node_modules/.bin/next dev /var/www/apps/web --hostname 0.0.0.0 --port 3000
       envVariables:
         NODE_ENV: production
         NEXT_PUBLIC_API_URL: ${CREATORSHIELD_API_URL}

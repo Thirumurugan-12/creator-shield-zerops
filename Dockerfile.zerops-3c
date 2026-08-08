@@ -12,9 +12,10 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY apps/api/requirements.txt /app/apps/api/requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r /app/apps/api/requirements.txt
 COPY apps/api /app/apps/api
 COPY apps/web /app/apps/web
-ENV PYTHONPATH=/app/apps/api:/app/apps/api/.zerops-deps
+ENV PYTHONPATH=/app/apps/api
 
 COPY scripts/start-creatorshield-3c.sh /usr/local/bin/start-creatorshield-3c
 RUN chmod +x /usr/local/bin/start-creatorshield-3c \

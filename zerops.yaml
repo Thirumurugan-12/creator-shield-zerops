@@ -29,7 +29,9 @@ zerops:
       base: python@3.12
       buildCommands:
         - python -m pip install --no-cache-dir --target apps/api/.zerops-deps -r apps/api/requirements.txt
-        - PYTHONPATH=apps/api/.zerops-deps python -c "from static_ffmpeg import run; run.get_or_fetch_platform_executables_else_raise()"
+        - mkdir -p apps/api/.zerops-deps/static_ffmpeg/bin/linux
+        - PYTHONPATH=apps/api/.zerops-deps python -c "from static_ffmpeg import run; print(run.get_or_fetch_platform_executables_else_raise(download_dir='apps/api/.zerops-deps/static_ffmpeg/bin/linux'))"
+        - test -x apps/api/.zerops-deps/static_ffmpeg/bin/linux/ffprobe
       deployFiles:
         - apps/api
         - apps/api/start-zerops.sh
@@ -55,7 +57,9 @@ zerops:
       base: python@3.12
       buildCommands:
         - python -m pip install --no-cache-dir --target apps/api/.zerops-deps -r apps/api/requirements.txt
-        - PYTHONPATH=apps/api/.zerops-deps python -c "from static_ffmpeg import run; run.get_or_fetch_platform_executables_else_raise()"
+        - mkdir -p apps/api/.zerops-deps/static_ffmpeg/bin/linux
+        - PYTHONPATH=apps/api/.zerops-deps python -c "from static_ffmpeg import run; print(run.get_or_fetch_platform_executables_else_raise(download_dir='apps/api/.zerops-deps/static_ffmpeg/bin/linux'))"
+        - test -x apps/api/.zerops-deps/static_ffmpeg/bin/linux/ffprobe
       deployFiles:
         - apps/api
     run:

@@ -30,7 +30,10 @@ def media_binary(name: str) -> str:
         # static-ffmpeg extracts its archive into the parent of the
         # requested platform directory. Keep the final ``linux`` segment
         # so the extracted binaries land at the paths returned by it.
-        download_dir = os.getenv("CREATORSHIELD_FFMPEG_DIR", "/tmp/creatorshield-ffmpeg/linux")
+        download_dir = os.getenv(
+            "CREATORSHIELD_FFMPEG_DIR",
+            "/var/www/apps/api/.zerops-deps/static_ffmpeg/bin/linux",
+        )
         ffmpeg, ffprobe = run.get_or_fetch_platform_executables_else_raise(download_dir=download_dir)
         return ffmpeg if name == "ffmpeg" else ffprobe
     except Exception as error:

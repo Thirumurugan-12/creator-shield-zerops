@@ -494,6 +494,7 @@ This report presents technical evidence only. It does not determine copyright ow
 - Verified the deployed API and worker are both active on `main@d2a13cc`.
 - Completed fresh live end-to-end verification with `CS-2026-0008` → `INC-2026-0015`: upload, queue, media comparison, complaint extraction, score calculation, report preview, and 100% same-media similarity.
 - Added ownership-protected deletion for proofs and incidents, including linked evidence/media cleanup; added delete actions to Vault, Incidents, Reports, and incident detail views.
+- Renamed the demo creator identity from Maya to Thiru across API seed/session data, workspace shell, dashboard, landing page, and registration defaults.
 ## 2026-08-08 deployment fix
 
 - Hardened S3 configuration fallback so unresolved Zerops placeholders cannot produce an unhandled upload error; the API now safely falls back to local storage until valid object-storage variables are available.

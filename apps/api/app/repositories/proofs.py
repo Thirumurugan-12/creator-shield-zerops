@@ -15,9 +15,10 @@ storage = StorageService()
 def get_or_create_demo_user(db: Session, username: str) -> User:
     user = db.scalar(select(User).where(User.email == "demo@creatorshield.local"))
     if user:
+        user.display_name = "Thiru"
         user.instagram_username = username
         return user
-    user = User(id="demo-creator", display_name="Maya Chen", instagram_username=username, email="demo@creatorshield.local")
+    user = User(id="demo-creator", display_name="Thiru", instagram_username=username, email="demo@creatorshield.local")
     db.add(user)
     db.flush()
     return user

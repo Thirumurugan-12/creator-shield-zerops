@@ -21,7 +21,7 @@ export default function Dashboard() {
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground"><span className="size-1.5 rounded-full bg-secured" />Protection workspace</div>
-            <h1 className="text-2xl font-semibold tracking-tight">Good morning, Maya.</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Good morning, Thiru.</h1>
             <p className="mt-2 text-sm text-muted-foreground">Your evidence workspace is ready for review.</p>
           </div>
           <Button asChild><Link href="/register"><Plus size={16} /> Secure a Reel</Link></Button>

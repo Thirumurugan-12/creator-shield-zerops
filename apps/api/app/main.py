@@ -88,8 +88,8 @@ def remove_media(key: str) -> None:
         logger.warning("Media cleanup skipped for %s", key, exc_info=True)
 
 
-@app.delete("/api/incidents/{incident_id}", status_code=204)
-def delete_incident(incident_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)) -> None:
+@app.delete("/api/incidents/{incident_id}")
+def delete_incident(incident_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)) -> dict[str, str]:
     incident = find_incident(db, incident_id, user.id)
     if not incident:
         raise HTTPException(404, "Incident not found")
@@ -100,10 +100,11 @@ def delete_incident(incident_id: str, db: Session = Depends(get_db), user=Depend
         db.execute(delete(MediaBlob).where(MediaBlob.storage_key == evidence.storage_key))
     db.delete(incident)
     db.commit()
+    return {"status": "deleted"}
 
 
-@app.delete("/api/proofs/{proof_id}", status_code=204)
-def delete_proof(proof_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)) -> None:
+@app.delete("/api/proofs/{proof_id}")
+def delete_proof(proof_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)) -> dict[str, str]:
     proof = find_proof(db, proof_id, user.id)
     if not proof:
         raise HTTPException(404, "Proof not found")
@@ -121,6 +122,7 @@ def delete_proof(proof_id: str, db: Session = Depends(get_db), user=Depends(get_
     db.execute(delete(ProcessingJob).where(ProcessingJob.proof_id == proof.id))
     db.delete(proof)
     db.commit()
+    return {"status": "deleted"}
 
 
 def save_upload_with_fallback(file: UploadFile, key: str, payload: bytes) -> tuple[int, str, str]:

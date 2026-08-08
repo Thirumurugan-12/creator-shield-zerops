@@ -14,10 +14,17 @@ class StorageService:
     """Private storage adapter. Local storage is used by default; S3-compatible storage is supported by configuration."""
 
     def __init__(self) -> None:
-        self.backend = os.getenv("STORAGE_BACKEND", "local")
+        configured_backend = os.getenv("STORAGE_BACKEND", "local").lower()
+        self.backend = "s3" if configured_backend == "s3" and self._s3_configured() else "local"
         self.root = Path(os.getenv("STORAGE_PATH", "/tmp/creatorshield/uploads"))
         self.root.mkdir(parents=True, exist_ok=True)
         self.secret = os.getenv("MEDIA_SIGNING_SECRET", "creatorshield-local-dev-secret").encode()
+
+    @staticmethod
+    def _s3_configured() -> bool:
+        """Treat unresolved Zerops references as missing configuration."""
+        required = ("S3_ENDPOINT_URL", "S3_BUCKET", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY")
+        return all((value := os.getenv(name, "").strip()) and not (value.startswith("${") and value.endswith("}")) for name in required)
 
     def signed_url(self, key: str, ttl_seconds: int = 3600) -> str:
         self._validate_key(key)

@@ -126,3 +126,6 @@ Upload secured
 - `Dockerfile.zerops-3c` and `docker-compose.zerops-3c.yml` intentionally run the Next.js web server, FastAPI API, and background worker in one app container.
 - The combined app uses `NEXT_PUBLIC_API_URL=/api`; `apps/web/next.config.ts` proxies `/api` and `/api/media` to the internal FastAPI listener.
 - This layout uses local app storage and is not production HA. Restore separate web/API/worker services, object storage, and HA database/cache before production deployment.
+## 2026-08-08 deployment consistency
+
+- Storage initialization validates all S3 endpoint, bucket, and credential references. Literal `${...}` placeholders are treated as missing configuration and use the local storage adapter instead of crashing uploads.

@@ -116,6 +116,7 @@ Upload secured
 - Docker Compose has been configured but requires a running Docker daemon for container execution.
 - The Zerops incident comparison path must not require a native FFmpeg executable: PyAV with NumPy is the runtime fallback for frame extraction. Fresh live verification completed proof `CS-2026-0007` and incident `INC-2026-0003` successfully.
 - Zerops local `/tmp` media is ephemeral across redeploys. Historical incident records can therefore fail when their original media is gone; production persistence must use object storage or a persistent volume.
+- Native Zerops API and worker services must use the project `storage` object store (`storage_apiUrl`, `storage_bucketName`, `storage_accessKeyId`, `storage_secretAccessKey`) so both services can read the same uploaded media after redeploys.
 
 ## Three-container demo deployment convention
 

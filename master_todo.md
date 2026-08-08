@@ -8,6 +8,14 @@ This is the source-of-truth delivery plan for CreatorShield. It combines the ori
 - `[~]` Partially implemented or currently in progress
 - `[ ]` Planned
 
+## Latest verified deployment
+
+- Zerops API version `main@aab824b2` is active and starts migrations plus Uvicorn successfully.
+- Zerops web version from the updated `main` branch is serving the corrected same-origin API client.
+- Verified on the public URL: demo login `200`, `/api/auth/me` `200`, `/api/proofs` `200`, `/api/incidents` `200`.
+- Browser smoke test passed for `/dashboard`, `/vault`, `/incidents`, `/reports`, `/community`, and `/settings`.
+- Report preview route resolves and shows an honest unavailable state when the requested incident does not exist.
+
 ## Current deployment milestone — three-container demo layout
 
 - [x] Add a single-node PostgreSQL import definition for development/demo use.
@@ -15,7 +23,7 @@ This is the source-of-truth delivery plan for CreatorShield. It combines the ori
 - [x] Add a combined Docker app image for Next.js, FastAPI, and the worker.
 - [x] Add same-origin `/api` proxying so the combined app uses one public port.
 - [x] Validate the combined Compose configuration, frontend production build, and backend compilation.
-- [~] Import the new three-container project into Zerops and run the authenticated smoke test.
+- [x] Deploy the native API and web services to Zerops and run the authenticated smoke test.
 - [ ] Re-enable multi-container HA services before production use.
 
 ## Product guardrails
@@ -180,7 +188,7 @@ This is the source-of-truth delivery plan for CreatorShield. It combines the ori
 - [x] Integrate FFmpeg and ffprobe in the API image.
 - [x] Extract duration, dimensions, codec, frame rate, and audio presence.
 - [x] Extract one keyframe per second.
-- [x] Generate perceptual image hashes with Pillow and ImageHash.
+- [x] Generate perceptual image hashes with a Pillow-only implementation compatible with Zerops Alpine Python.
 - [x] Add development audio fingerprint provider using normalized PCM SHA-256.
 - [x] Add transcript provider abstraction with an explicit unavailable fallback.
 - [x] Persist each processing event with timestamp and job ID.

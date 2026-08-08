@@ -107,6 +107,9 @@ Upload secured
 - Uploads must pass extension, content-signature, size, safe-filename, and storage-key checks before persistence. Malware scanning is an explicit integration hook until a scanner is configured.
 - Production deployments must set `SECURE_COOKIES=true`, strong session/media secrets, and an explicit `CORS_ORIGINS` list. Local development may use HTTP-only cookies over localhost with `SECURE_COOKIES=false`.
 - Zerops deployment uses `zerops-import.yaml` for infrastructure and `zerops.yaml` for application pipelines. Do not mark production deployment complete until the authenticated project smoke test passes.
+- Keep `zerops.yaml` and `zerops.yml` aligned when both are present; Zerops Git/repository triggers may consume the YAML manifest while legacy UI labels refer to `zerops.yml`.
+- For browser API calls, treat `/api` as a same-origin prefix rather than an API origin; never concatenate it with another `/api` segment.
+- The native Zerops Python service uses `python -m uvicorn` and includes the PostgreSQL driver selected by the deployed connection URL.
 - Hackathon-facing navigation routes must be functional: Reports reads incident records, Community Intelligence exposes only labelled simulated signals, and Settings reads the authenticated profile and controls appearance.
 - Submission documentation must explain why Zerops is materially involved in the product architecture, not merely name it as a hosting provider.
 - Docker Compose has been configured but requires a running Docker daemon for container execution.

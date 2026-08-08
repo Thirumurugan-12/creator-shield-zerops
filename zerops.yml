@@ -43,9 +43,10 @@ zerops:
         - apps/web/tsconfig.json
         - apps/web/tailwind.config.ts
         - apps/web/postcss.config.js
+        - apps/web/start-zerops.sh
     run:
       base: nodejs@22
-      start: /var/www/apps/web/node_modules/.bin/next dev /var/www/apps/web --hostname 0.0.0.0 --port 3000
+      start: /bin/sh /var/www/apps/web/start-zerops.sh
       envVariables:
         NODE_ENV: development
         NEXT_PUBLIC_API_URL: ${CREATORSHIELD_API_URL}

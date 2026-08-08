@@ -12,13 +12,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY apps/api/requirements.txt /app/apps/api/requirements.txt
-RUN pip3 install --no-cache-dir --break-system-packages -r /app/apps/api/requirements.txt
-
 COPY apps/api /app/apps/api
-COPY apps/web/package.json apps/web/package-lock.json /app/apps/web/
-RUN cd /app/apps/web && npm ci
 COPY apps/web /app/apps/web
-COPY apps/web/.next /app/apps/web/.next
+ENV PYTHONPATH=/app/apps/api:/app/apps/api/.zerops-deps
 
 COPY scripts/start-creatorshield-3c.sh /usr/local/bin/start-creatorshield-3c
 RUN chmod +x /usr/local/bin/start-creatorshield-3c \

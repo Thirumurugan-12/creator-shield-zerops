@@ -6,6 +6,7 @@ zerops:
       base: nodejs@22
       buildCommands:
         - cd apps/web && npm ci && npm run build
+        - pip install --target apps/api/.zerops-deps -r apps/api/requirements.txt
       deployFiles: .
       addToRunPrepare: ./docker-compose.zerops-3c.yml
     run:

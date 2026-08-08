@@ -12,12 +12,14 @@ zerops:
         - apps/web/package.json
         - apps/web/node_modules
         - apps/web/next.config.ts
+        - apps/web/start-zerops.sh
     run:
       base: nodejs@22
       start: cd /var/www/apps/web && npm run start
       envVariables:
         NODE_ENV: production
-        NEXT_PUBLIC_API_URL: ${CREATORSHIELD_API_URL}
+        NEXT_PUBLIC_API_URL: /api
+        CREATORSHIELD_API_URL: http://api:8000
       ports:
         - port: 3000
           httpSupport: true

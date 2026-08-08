@@ -135,3 +135,6 @@ Upload secured
 - Worker media downloads retry four times with exponential backoff because private object storage may briefly lag after upload.
 - Zerops media uploads use single-request S3 PUT rather than multipart upload for reliable object visibility to the worker.
 - Newly uploaded source media is mirrored in PostgreSQL as a bounded fallback so worker comparison remains operable if private object storage cannot immediately read the object.
+- API upload failures from Zerops Object Storage are now non-fatal: the uploaded bytes, size, and SHA-256 are retained for the PostgreSQL mirror and the worker can continue processing.
+- Fresh live verification passed on `main@d2a13cc`: proof `CS-2026-0008`, incident `INC-2026-0015`, media comparison, complaint analysis, and report preview.
+- Historical proofs created before the mirror fallback may still fail if their original object is already missing from object storage; fresh uploads are durable through the shared database mirror.

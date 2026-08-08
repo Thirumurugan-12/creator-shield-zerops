@@ -33,8 +33,9 @@ zerops:
       os: ubuntu
       base: python@3.12
       prepareCommands:
-        - apt-get update
-        - apt-get install -y --no-install-recommends ffmpeg
+        # Zerops runtime images do not permit apt repository updates. Keep
+        # startup portable; media processing uses ffmpeg when present.
+        - command -v ffmpeg || true
       initCommands:
         - cd /var/www/apps/api && PYTHONPATH=/var/www/apps/api:/var/www/apps/api/.zerops-deps alembic upgrade head
       start: cd /var/www/apps/api && PYTHONPATH=/var/www/apps/api:/var/www/apps/api/.zerops-deps uvicorn app.main:app --host 0.0.0.0 --port 8000
@@ -66,8 +67,9 @@ zerops:
       os: ubuntu
       base: python@3.12
       prepareCommands:
-        - apt-get update
-        - apt-get install -y --no-install-recommends ffmpeg
+        # Zerops runtime images do not permit apt repository updates. Keep
+        # startup portable; media processing uses ffmpeg when present.
+        - command -v ffmpeg || true
       start: cd /var/www/apps/api && PYTHONPATH=/var/www/apps/api:/var/www/apps/api/.zerops-deps python -m app.worker
       envVariables:
         PYTHONPATH: /var/www/apps/api:/var/www/apps/api/.zerops-deps

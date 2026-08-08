@@ -12,12 +12,12 @@ from typing import Any
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, joinedload
 
 from .db.base import Base
 from .db.session import SessionLocal, engine, get_db
-from .models.entities import Incident, IncidentEvidence, MediaBlob, ProcessingJob, ProofRecord
+from .models.entities import Incident, IncidentEvidence, MediaBlob, ProcessingEvent, ProcessingJob, ProofRecord
 from .repositories.proofs import add_event, get_or_create_demo_user, get_proof as find_proof, list_proofs as query_proofs, next_proof_id, serialize_proof
 from .services.queue import ProofQueue
 from .services.storage import StorageService
@@ -79,6 +79,48 @@ def health(db: Session = Depends(get_db)) -> dict[str, str]:
 
 def mirror_media(db: Session, key: str, payload: bytes) -> None:
     db.merge(MediaBlob(storage_key=key, payload=payload))
+
+
+def remove_media(key: str) -> None:
+    try:
+        storage.delete(key)
+    except Exception:
+        logger.warning("Media cleanup skipped for %s", key, exc_info=True)
+
+
+@app.delete("/api/incidents/{incident_id}", status_code=204)
+def delete_incident(incident_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)) -> None:
+    incident = find_incident(db, incident_id, user.id)
+    if not incident:
+        raise HTTPException(404, "Incident not found")
+    remove_media(incident.suspicious_storage_key)
+    db.execute(delete(MediaBlob).where(MediaBlob.storage_key == incident.suspicious_storage_key))
+    for evidence in incident.evidence:
+        remove_media(evidence.storage_key)
+        db.execute(delete(MediaBlob).where(MediaBlob.storage_key == evidence.storage_key))
+    db.delete(incident)
+    db.commit()
+
+
+@app.delete("/api/proofs/{proof_id}", status_code=204)
+def delete_proof(proof_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)) -> None:
+    proof = find_proof(db, proof_id, user.id)
+    if not proof:
+        raise HTTPException(404, "Proof not found")
+    incidents = db.scalars(select(Incident).options(joinedload(Incident.evidence)).where(Incident.proof_id == proof.id)).unique().all()
+    for incident in incidents:
+        remove_media(incident.suspicious_storage_key)
+        db.execute(delete(MediaBlob).where(MediaBlob.storage_key == incident.suspicious_storage_key))
+        for evidence in incident.evidence:
+            remove_media(evidence.storage_key)
+            db.execute(delete(MediaBlob).where(MediaBlob.storage_key == evidence.storage_key))
+        db.delete(incident)
+    remove_media(proof.storage_key)
+    db.execute(delete(MediaBlob).where(MediaBlob.storage_key == proof.storage_key))
+    db.execute(delete(ProcessingEvent).where(ProcessingEvent.proof_id == proof.id))
+    db.execute(delete(ProcessingJob).where(ProcessingJob.proof_id == proof.id))
+    db.delete(proof)
+    db.commit()
 
 
 def save_upload_with_fallback(file: UploadFile, key: str, payload: bytes) -> tuple[int, str, str]:

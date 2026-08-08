@@ -138,3 +138,4 @@ Upload secured
 - API upload failures from Zerops Object Storage are now non-fatal: the uploaded bytes, size, and SHA-256 are retained for the PostgreSQL mirror and the worker can continue processing.
 - Fresh live verification passed on `main@d2a13cc`: proof `CS-2026-0008`, incident `INC-2026-0015`, media comparison, complaint analysis, and report preview.
 - Historical proofs created before the mirror fallback may still fail if their original object is already missing from object storage; fresh uploads are durable through the shared database mirror.
+- Delete actions require the authenticated owner; proof deletion also removes linked incidents, evidence records, processing events/jobs, media mirrors, and storage objects where available.

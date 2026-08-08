@@ -51,8 +51,30 @@ def perceptual_hash(image) -> str:
     return "".join("1" if pixel >= average else "0" for pixel in pixels)
 
 
+def _extract_metadata_pyav(path: Path) -> dict:
+    import av
+
+    container = av.open(str(path))
+    video = next((stream for stream in container.streams if stream.type == "video"), None)
+    if video is None:
+        raise ValueError("No video stream found")
+    duration = float(video.duration * video.time_base) if video.duration and video.time_base else float(container.duration or 0) / 1_000_000
+    frame_rate = float(video.average_rate) if video.average_rate else None
+    return {
+        "duration": duration,
+        "width": video.codec_context.width,
+        "height": video.codec_context.height,
+        "codec": video.codec_context.name,
+        "frame_rate": frame_rate,
+        "audio_present": any(stream.type == "audio" for stream in container.streams),
+    }
+
+
 def extract_metadata(path: Path) -> dict:
-    result = _run([media_binary("ffprobe"), "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)])
+    try:
+        result = _run([media_binary("ffprobe"), "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)])
+    except Exception:
+        return _extract_metadata_pyav(path)
     payload = json.loads(result.stdout)
     video = next((stream for stream in payload.get("streams", []) if stream.get("codec_type") == "video"), None)
     if not video:
@@ -68,7 +90,21 @@ def extract_keyframes(path: Path, proof_id: str) -> list[dict[str, str | float]]
 
     with tempfile.TemporaryDirectory() as directory:
         output_pattern = str(Path(directory) / "frame-%04d.jpg")
-        _run([media_binary("ffmpeg"), "-hide_banner", "-loglevel", "error", "-i", str(path), "-vf", "fps=1", "-q:v", "3", "-y", output_pattern])
+        try:
+            _run([media_binary("ffmpeg"), "-hide_banner", "-loglevel", "error", "-i", str(path), "-vf", "fps=1", "-q:v", "3", "-y", output_pattern])
+        except Exception:
+            import av
+
+            container = av.open(str(path))
+            video = next((stream for stream in container.streams if stream.type == "video"), None)
+            if video is None:
+                raise ValueError("No video stream found")
+            next_timestamp = 0.0
+            for frame in container.decode(video=0):
+                timestamp = float(frame.time or 0.0)
+                if timestamp + 0.001 >= next_timestamp:
+                    frame.to_image().save(Path(directory) / f"frame-{len(list(Path(directory).glob('frame-*.jpg'))):04d}.jpg", quality=85)
+                    next_timestamp += 1.0
         frames: list[dict[str, str | float]] = []
         for index, frame in enumerate(sorted(Path(directory).glob("frame-*.jpg"))):
             with Image.open(frame) as image:
@@ -83,8 +119,20 @@ def extract_keyframes(path: Path, proof_id: str) -> list[dict[str, str | float]]
 def create_audio_fingerprint(path: Path, has_audio: bool) -> str | None:
     if not has_audio:
         return None
-    result = _run([media_binary("ffmpeg"), "-hide_banner", "-loglevel", "error", "-i", str(path), "-map", "0:a:0", "-f", "s16le", "-ac", "1", "-ar", "8000", "pipe:1"])
-    return hashlib.sha256(result.stdout).hexdigest()
+    try:
+        result = _run([media_binary("ffmpeg"), "-hide_banner", "-loglevel", "error", "-i", str(path), "-map", "0:a:0", "-f", "s16le", "-ac", "1", "-ar", "8000", "pipe:1"])
+        return hashlib.sha256(result.stdout).hexdigest()
+    except Exception:
+        import av
+
+        container = av.open(str(path))
+        audio = next((stream for stream in container.streams if stream.type == "audio"), None)
+        if audio is None:
+            return None
+        digest = hashlib.sha256()
+        for frame in container.decode(audio=0):
+            digest.update(frame.to_ndarray().tobytes())
+        return digest.hexdigest()
 
 
 def process_proof(proof_id: str) -> None:
@@ -109,7 +157,7 @@ def process_proof(proof_id: str) -> None:
             job = db.scalar(select(ProcessingJob).where(ProcessingJob.proof_id == proof.id, ProcessingJob.status == "running").order_by(ProcessingJob.id.desc()))
             proof.duration, proof.width, proof.height, proof.codec, proof.frame_rate, proof.audio_present = metadata["duration"], metadata["width"], metadata["height"], metadata["codec"], metadata["frame_rate"], metadata["audio_present"]
             proof.progress, proof.current_step = 28, "metadata"
-            add_event(db, proof, "Video metadata extracted with ffprobe", job)
+            add_event(db, proof, "Video metadata extracted", job)
             db.commit()
         frames = extract_keyframes(path, proof_id)
         with SessionLocal() as db:

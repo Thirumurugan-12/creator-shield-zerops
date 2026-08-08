@@ -72,7 +72,7 @@ def get_private_media(path: str, expires: int = Query(...), signature: str = Que
 @app.get("/api/health")
 def health(db: Session = Depends(get_db)) -> dict[str, str]:
     db.execute(select(1))
-    return {"status": "ok"}
+    return {"status": "ok", "storage_backend": storage.backend}
 
 
 @app.get("/api/proofs")

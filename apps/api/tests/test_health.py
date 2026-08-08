@@ -7,7 +7,9 @@ from apps.api.app.main import app
 client = TestClient(app)
 
 def test_health() -> None:
-    assert client.get("/health").json() == {"status": "ok"}
+    payload = client.get("/health").json()
+    assert payload["status"] == "ok"
+    assert payload["storage_backend"] in {"local", "s3"}
 
 
 def test_proofs_require_authentication() -> None:

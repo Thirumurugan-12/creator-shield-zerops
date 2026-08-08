@@ -488,6 +488,7 @@ This report presents technical evidence only. It does not determine copyright ow
 - Fixed worker startup on Zerops by replacing the direct `cd && python` command (exit 127) with a deployed shell entrypoint script.
 - Added bounded S3 materialization retries to tolerate short Zerops Object Storage read-after-write delays during incident comparison.
 - Switched Zerops media writes from multipart `upload_file` to single-request `put_object` so newly secured incident media is immediately readable by the worker.
+- Added storage-backend visibility to the health check to verify that API and worker use the same persistent backend in Zerops.
 ## 2026-08-08 deployment fix
 
 - Hardened S3 configuration fallback so unresolved Zerops placeholders cannot produce an unhandled upload error; the API now safely falls back to local storage until valid object-storage variables are available.

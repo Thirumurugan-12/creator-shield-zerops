@@ -46,7 +46,7 @@ zerops:
         AWS_ACCESS_KEY_ID: ${storage_accessKeyId}
         AWS_SECRET_ACCESS_KEY: ${storage_secretAccessKey}
         DATABASE_URL: ${db_connectionString}
-        REDIS_URL: ${cache_connectionString}
+        REDIS_URL: ${valkey_connectionString}
         MEDIA_SIGNING_SECRET: creatorshield-zerops-media
         SESSION_SECRET: creatorshield-zerops-session
         SECURE_COOKIES: "false"
@@ -71,8 +71,8 @@ zerops:
       envVariables:
         PYTHONPATH: /var/www/apps/api:/var/www/apps/api/.zerops-deps
         STORAGE_BACKEND: s3
-        DATABASE_URL: ${CREATORSHIELD_DATABASE_URL}
-        REDIS_URL: ${CREATORSHIELD_REDIS_URL}
+        DATABASE_URL: ${db_connectionString}
+        REDIS_URL: ${valkey_connectionString}
         S3_ENDPOINT_URL: ${storage_apiUrl}
         S3_BUCKET: ${storage_bucketName}
         AWS_ACCESS_KEY_ID: ${storage_accessKeyId}

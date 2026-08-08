@@ -27,15 +27,21 @@ def media_binary(name: str) -> str:
     try:
         from static_ffmpeg import run
 
-        # static-ffmpeg extracts its archive into the parent of the
-        # requested platform directory. Keep the final ``linux`` segment
-        # so the extracted binaries land at the paths returned by it.
-        download_dir = os.getenv(
-            "CREATORSHIELD_FFMPEG_DIR",
-            "/var/www/apps/api/vendor/ffmpeg/linux",
-        )
-        ffmpeg, ffprobe = run.get_or_fetch_platform_executables_else_raise(download_dir=download_dir)
-        return ffmpeg if name == "ffmpeg" else ffprobe
+        # The build artifact path is not stable across Zerops service
+        # images. Prefer it when present, then use a writable runtime cache
+        # so a freshly deployed API can self-heal if the artifact was not
+        # copied into the final image.
+        configured_dir = os.getenv("CREATORSHIELD_FFMPEG_DIR", "/var/www/apps/api/vendor/ffmpeg/linux")
+        candidates = [configured_dir, "/tmp/creatorshield-ffmpeg"]
+        for download_dir in candidates:
+            try:
+                ffmpeg, ffprobe = run.get_or_fetch_platform_executables_else_raise(download_dir=download_dir)
+                selected = ffmpeg if name == "ffmpeg" else ffprobe
+                if Path(selected).is_file() and os.access(selected, os.X_OK):
+                    return selected
+            except Exception:
+                continue
+        raise FileNotFoundError(f"No usable {name} binary was provisioned")
     except Exception as error:
         raise RuntimeError(f"{name} is unavailable; media processing cannot start") from error
 

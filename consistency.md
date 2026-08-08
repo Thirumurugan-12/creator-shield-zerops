@@ -117,6 +117,8 @@ Upload secured
 - The Zerops incident comparison path must not require a native FFmpeg executable: PyAV with NumPy is the runtime fallback for frame extraction. Fresh live verification completed proof `CS-2026-0007` and incident `INC-2026-0003` successfully.
 - Zerops local `/tmp` media is ephemeral across redeploys. Historical incident records can therefore fail when their original media is gone; production persistence must use object storage or a persistent volume.
 - Native Zerops API and worker services must use the project `storage` object store (`storage_apiUrl`, `storage_bucketName`, `storage_accessKeyId`, `storage_secretAccessKey`) so both services can read the same uploaded media after redeploys.
+- Live Zerops service hostnames are `db`, `valkey`, `storage`, `api`, `worker`, and `web`; keep deployment references aligned with those names.
+- FFmpeg/FFprobe resolution first uses the system PATH, then the build artifact, then a writable `/tmp/creatorshield-ffmpeg` runtime cache.
 
 ## Three-container demo deployment convention
 

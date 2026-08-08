@@ -62,6 +62,7 @@ zerops:
         - test -x apps/api/vendor/ffmpeg/linux/ffprobe
       deployFiles:
         - apps/api
+        - apps/api/start-worker-zerops.sh
         - apps/api/start-zerops.sh
     run:
       base: python@3.12
@@ -104,7 +105,7 @@ zerops:
         # Zerops runtime images do not permit apt repository updates. Keep
         # startup portable; media processing uses ffmpeg when present.
         - command -v ffmpeg || true
-      start: cd /var/www/apps/api && PYTHONPATH=/var/www/apps/api:/var/www/apps/api/.zerops-deps python -m app.worker
+      start: /bin/sh /var/www/apps/api/start-worker-zerops.sh
       envVariables:
         PYTHONPATH: /var/www/apps/api:/var/www/apps/api/.zerops-deps
         STORAGE_BACKEND: s3

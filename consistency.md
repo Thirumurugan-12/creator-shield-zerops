@@ -131,3 +131,4 @@ Upload secured
 - Storage initialization validates all S3 endpoint, bucket, and credential references. Literal `${...}` placeholders are treated as missing configuration and use the local storage adapter instead of crashing uploads.
 - S3 uploads do not send a KMS-only `ServerSideEncryption` request because Zerops Object Storage handles encryption at the bucket level.
 - The live Zerops worker is configured for 0.5–1 GB RAM; this prevents the runtime supervisor from being OOM-killed during background processing.
+- Zerops worker startup must use `/bin/sh /var/www/apps/api/start-worker-zerops.sh`; Zerops executes `run.start` directly and does not interpret `cd` as a shell builtin.

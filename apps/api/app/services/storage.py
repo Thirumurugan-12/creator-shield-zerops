@@ -139,5 +139,6 @@ class StorageService:
             # these bounded uploads; avoid multipart state that can return a
             # successful upload while the object is not readable immediately.
             temporary.seek(0)
-            client.put_object(Bucket=os.environ["S3_BUCKET"], Key=key, Body=temporary)
+            payload = temporary.read()
+            client.put_object(Bucket=os.environ["S3_BUCKET"], Key=key, Body=payload, ContentLength=len(payload))
         return total, key, digest.hexdigest()

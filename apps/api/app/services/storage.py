@@ -5,8 +5,9 @@ import hashlib
 import hmac
 import time
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, Iterator
 
 
 class StorageService:
@@ -74,6 +75,21 @@ class StorageService:
         if self.root.resolve() not in target.parents:
             raise ValueError("Invalid storage key")
         return target
+
+    @contextmanager
+    def materialize(self, key: str) -> Iterator[Path]:
+        """Yield a local path for media, downloading S3 objects when required."""
+        if self.backend != "s3":
+            yield self.local_path(key)
+            return
+        import boto3
+
+        self._validate_key(key)
+        with tempfile.NamedTemporaryFile(suffix=Path(key).suffix) as temporary:
+            client = boto3.client("s3", endpoint_url=os.getenv("S3_ENDPOINT_URL") or None)
+            client.download_fileobj(os.environ["S3_BUCKET"], key, temporary)
+            temporary.flush()
+            yield Path(temporary.name)
 
     def _validate_key(self, key: str) -> None:
         candidate = Path(key)

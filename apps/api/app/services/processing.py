@@ -150,38 +150,38 @@ def process_proof(proof_id: str) -> None:
         add_event(db, proof, f"Processing job {job.id} started", job)
         db.commit()
     try:
-        path = storage.local_path(proof.storage_key)
-        metadata = extract_metadata(path)
-        with SessionLocal() as db:
-            proof = get_proof(db, proof_id)
-            job = db.scalar(select(ProcessingJob).where(ProcessingJob.proof_id == proof.id, ProcessingJob.status == "running").order_by(ProcessingJob.id.desc()))
-            proof.duration, proof.width, proof.height, proof.codec, proof.frame_rate, proof.audio_present = metadata["duration"], metadata["width"], metadata["height"], metadata["codec"], metadata["frame_rate"], metadata["audio_present"]
-            proof.progress, proof.current_step = 28, "metadata"
-            add_event(db, proof, "Video metadata extracted", job)
-            db.commit()
-        frames = extract_keyframes(path, proof_id)
-        with SessionLocal() as db:
-            proof = get_proof(db, proof_id)
-            job = db.scalar(select(ProcessingJob).where(ProcessingJob.proof_id == proof.id, ProcessingJob.status == "running").order_by(ProcessingJob.id.desc()))
-            proof.keyframes_json = json.dumps(frames)
-            proof.progress, proof.current_step = 58, "keyframes"
-            add_event(db, proof, f"{len(frames)} keyframes extracted and perceptually hashed", job)
-            db.commit()
-        audio_fingerprint = create_audio_fingerprint(path, bool(metadata["audio_present"]))
-        with SessionLocal() as db:
-            proof = get_proof(db, proof_id)
-            job = db.scalar(select(ProcessingJob).where(ProcessingJob.proof_id == proof.id, ProcessingJob.status == "running").order_by(ProcessingJob.id.desc()))
-            proof.audio_fingerprint = audio_fingerprint
-            proof.progress, proof.current_step = 76, "audio"
-            add_event(db, proof, "Audio fingerprint generated" if audio_fingerprint else "No audio stream detected", job)
-            proof.transcript_status = "unavailable"
-            proof.progress, proof.current_step = 88, "transcript"
-            add_event(db, proof, "Transcript provider unavailable in local development", job)
-            proof.status, proof.current_step, proof.progress = "secured", "secured", 100
-            proof.evidence_completeness = 90 if audio_fingerprint else 82
-            job.status = "completed"
-            add_event(db, proof, "Creator Proof finalised", job)
-            db.commit()
+        with storage.materialize(proof.storage_key) as path:
+            metadata = extract_metadata(path)
+            with SessionLocal() as db:
+                proof = get_proof(db, proof_id)
+                job = db.scalar(select(ProcessingJob).where(ProcessingJob.proof_id == proof.id, ProcessingJob.status == "running").order_by(ProcessingJob.id.desc()))
+                proof.duration, proof.width, proof.height, proof.codec, proof.frame_rate, proof.audio_present = metadata["duration"], metadata["width"], metadata["height"], metadata["codec"], metadata["frame_rate"], metadata["audio_present"]
+                proof.progress, proof.current_step = 28, "metadata"
+                add_event(db, proof, "Video metadata extracted", job)
+                db.commit()
+            frames = extract_keyframes(path, proof_id)
+            with SessionLocal() as db:
+                proof = get_proof(db, proof_id)
+                job = db.scalar(select(ProcessingJob).where(ProcessingJob.proof_id == proof.id, ProcessingJob.status == "running").order_by(ProcessingJob.id.desc()))
+                proof.keyframes_json = json.dumps(frames)
+                proof.progress, proof.current_step = 58, "keyframes"
+                add_event(db, proof, f"{len(frames)} keyframes extracted and perceptually hashed", job)
+                db.commit()
+            audio_fingerprint = create_audio_fingerprint(path, bool(metadata["audio_present"]))
+            with SessionLocal() as db:
+                proof = get_proof(db, proof_id)
+                job = db.scalar(select(ProcessingJob).where(ProcessingJob.proof_id == proof.id, ProcessingJob.status == "running").order_by(ProcessingJob.id.desc()))
+                proof.audio_fingerprint = audio_fingerprint
+                proof.progress, proof.current_step = 76, "audio"
+                add_event(db, proof, "Audio fingerprint generated" if audio_fingerprint else "No audio stream detected", job)
+                proof.transcript_status = "unavailable"
+                proof.progress, proof.current_step = 88, "transcript"
+                add_event(db, proof, "Transcript provider unavailable in local development", job)
+                proof.status, proof.current_step, proof.progress = "secured", "secured", 100
+                proof.evidence_completeness = 90 if audio_fingerprint else 82
+                job.status = "completed"
+                add_event(db, proof, "Creator Proof finalised", job)
+                db.commit()
     except Exception as error:
         with SessionLocal() as db:
             proof = get_proof(db, proof_id)

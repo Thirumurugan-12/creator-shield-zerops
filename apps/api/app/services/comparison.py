@@ -75,17 +75,16 @@ def compare_incident(incident_id: str) -> None:
         incident.events_json=json.dumps(events)
         db.commit()
     try:
-        original_path=storage.local_path(original.storage_key)
-        suspicious_path=storage.local_path(incident.suspicious_storage_key)
-        original_metadata=extract_metadata(original_path)
-        suspicious_metadata=extract_metadata(suspicious_path)
-        original_hashes=_frame_hashes(original_path)
-        suspicious_hashes=_frame_hashes(suspicious_path)
-        mirrored_hashes=_frame_hashes(suspicious_path, mirrored=True)
-        visual, matches=_visual_score(original_hashes, suspicious_hashes)
-        mirrored_score, mirrored_matches=_visual_score(original_hashes, mirrored_hashes)
-        audio_original=create_audio_fingerprint(original_path, bool(original_metadata["audio_present"]))
-        audio_suspicious=create_audio_fingerprint(suspicious_path, bool(suspicious_metadata["audio_present"]))
+        with storage.materialize(original.storage_key) as original_path, storage.materialize(incident.suspicious_storage_key) as suspicious_path:
+            original_metadata=extract_metadata(original_path)
+            suspicious_metadata=extract_metadata(suspicious_path)
+            original_hashes=_frame_hashes(original_path)
+            suspicious_hashes=_frame_hashes(suspicious_path)
+            mirrored_hashes=_frame_hashes(suspicious_path, mirrored=True)
+            visual, matches=_visual_score(original_hashes, suspicious_hashes)
+            mirrored_score, mirrored_matches=_visual_score(original_hashes, mirrored_hashes)
+            audio_original=create_audio_fingerprint(original_path, bool(original_metadata["audio_present"]))
+            audio_suspicious=create_audio_fingerprint(suspicious_path, bool(suspicious_metadata["audio_present"]))
         audio=100.0 if audio_original and audio_original == audio_suspicious else 0.0
         timeline=max(0.0, 100.0-abs(original_metadata["duration"]-suspicious_metadata["duration"])/max(original_metadata["duration"],1.0)*100.0)
         available_weight=0.45+0.30+0.05

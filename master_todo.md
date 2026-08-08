@@ -15,6 +15,7 @@ This is the source-of-truth delivery plan for CreatorShield. It combines the ori
 - Verified on the public URL: demo login `200`, `/api/auth/me` `200`, `/api/proofs` `200`, `/api/incidents` `200`.
 - Browser smoke test passed for `/dashboard`, `/vault`, `/incidents`, `/reports`, `/community`, and `/settings`.
 - Report preview route resolves and shows an honest unavailable state when the requested incident does not exist.
+- [x] Add a pinned static FFmpeg/ffprobe fallback and prefetch it during Zerops API/worker builds after the deployed runtime reported missing `ffprobe`.
 
 ## Current deployment milestone — three-container demo layout
 

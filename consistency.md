@@ -100,6 +100,7 @@ Upload secured
 - The local backend persists proof records with SQLAlchemy and stores files in a local volume by default.
 - PostgreSQL, Valkey, a worker service, and an S3-compatible adapter are configured; Docker runtime verification is still pending.
 - Signed media URLs, media metadata, keyframes, audio fingerprints, and comparison outputs are extracted from local video content when ffmpeg/ffprobe are available.
+- Zerops builds install and prefetch the pinned `static-ffmpeg` package so both `ffmpeg` and `ffprobe` are available even when the native Python runtime has no OS media packages. The application resolves system binaries first and falls back to the bundled static binaries.
 - Transcript extraction remains an explicit unavailable state until a provider is configured; side-by-side matching keyframes and advanced crop, watermark, speed, and color indicators are still pending.
 - Complaint originals remain private evidence files; extracted complaint fields and suspicion indicators are persisted separately. Local PDF text extraction is supported, while image OCR remains an explicit unavailable state.
 - Community intelligence is simulated development data only. It must be labelled in the UI, kept separate from uploaded evidence, and explain the exact correlating identifier before affecting a review score.

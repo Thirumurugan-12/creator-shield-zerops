@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
 import tempfile
 from fractions import Fraction
@@ -17,6 +18,20 @@ from .storage import StorageService
 storage = StorageService()
 
 
+def media_binary(name: str) -> str:
+    """Resolve FFmpeg tools in Docker or provision static tools on Zerops."""
+    system_binary = shutil.which(name)
+    if system_binary:
+        return system_binary
+    try:
+        from static_ffmpeg import run
+
+        ffmpeg, ffprobe = run.get_or_fetch_platform_executables_else_raise()
+        return ffmpeg if name == "ffmpeg" else ffprobe
+    except Exception as error:
+        raise RuntimeError(f"{name} is unavailable; media processing cannot start") from error
+
+
 def _run(command: list[str], *, output: bool = True) -> subprocess.CompletedProcess:
     return subprocess.run(command, check=True, stdout=subprocess.PIPE if output else subprocess.DEVNULL, stderr=subprocess.PIPE)
 
@@ -29,7 +44,7 @@ def perceptual_hash(image) -> str:
 
 
 def extract_metadata(path: Path) -> dict:
-    result = _run(["ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)])
+    result = _run([media_binary("ffprobe"), "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)])
     payload = json.loads(result.stdout)
     video = next((stream for stream in payload.get("streams", []) if stream.get("codec_type") == "video"), None)
     if not video:
@@ -45,7 +60,7 @@ def extract_keyframes(path: Path, proof_id: str) -> list[dict[str, str | float]]
 
     with tempfile.TemporaryDirectory() as directory:
         output_pattern = str(Path(directory) / "frame-%04d.jpg")
-        _run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", str(path), "-vf", "fps=1", "-q:v", "3", "-y", output_pattern])
+        _run([media_binary("ffmpeg"), "-hide_banner", "-loglevel", "error", "-i", str(path), "-vf", "fps=1", "-q:v", "3", "-y", output_pattern])
         frames: list[dict[str, str | float]] = []
         for index, frame in enumerate(sorted(Path(directory).glob("frame-*.jpg"))):
             with Image.open(frame) as image:
@@ -60,7 +75,7 @@ def extract_keyframes(path: Path, proof_id: str) -> list[dict[str, str | float]]
 def create_audio_fingerprint(path: Path, has_audio: bool) -> str | None:
     if not has_audio:
         return None
-    result = _run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", str(path), "-map", "0:a:0", "-f", "s16le", "-ac", "1", "-ar", "8000", "pipe:1"])
+    result = _run([media_binary("ffmpeg"), "-hide_banner", "-loglevel", "error", "-i", str(path), "-map", "0:a:0", "-f", "s16le", "-ac", "1", "-ar", "8000", "pipe:1"])
     return hashlib.sha256(result.stdout).hexdigest()
 
 

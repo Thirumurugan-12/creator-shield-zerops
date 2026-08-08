@@ -12,7 +12,7 @@ from ..db.session import SessionLocal
 from ..models.entities import Incident, ProofRecord
 from ..repositories.incidents import find_incident
 from ..repositories.proofs import get_proof
-from .processing import create_audio_fingerprint, extract_metadata
+from .processing import create_audio_fingerprint, extract_metadata, media_binary
 from .storage import StorageService
 
 storage = StorageService()
@@ -32,7 +32,7 @@ def _frame_hashes(path: Path, mirrored: bool = False) -> list[Any]:
     from PIL import Image, ImageOps
     with tempfile.TemporaryDirectory() as directory:
         pattern = str(Path(directory) / "frame-%04d.jpg")
-        subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", str(path), "-vf", "fps=1", "-q:v", "3", "-y", pattern], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run([media_binary("ffmpeg"), "-hide_banner", "-loglevel", "error", "-i", str(path), "-vf", "fps=1", "-q:v", "3", "-y", pattern], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         hashes=[]
         for frame in sorted(Path(directory).glob("frame-*.jpg")):
             with Image.open(frame) as image:

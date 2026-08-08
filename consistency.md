@@ -114,6 +114,8 @@ Upload secured
 - Hackathon-facing navigation routes must be functional: Reports reads incident records, Community Intelligence exposes only labelled simulated signals, and Settings reads the authenticated profile and controls appearance.
 - Submission documentation must explain why Zerops is materially involved in the product architecture, not merely name it as a hosting provider.
 - Docker Compose has been configured but requires a running Docker daemon for container execution.
+- The Zerops incident comparison path must not require a native FFmpeg executable: PyAV with NumPy is the runtime fallback for frame extraction. Fresh live verification completed proof `CS-2026-0007` and incident `INC-2026-0003` successfully.
+- Zerops local `/tmp` media is ephemeral across redeploys. Historical incident records can therefore fail when their original media is gone; production persistence must use object storage or a persistent volume.
 
 ## Three-container demo deployment convention
 

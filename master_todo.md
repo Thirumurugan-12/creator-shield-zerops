@@ -446,7 +446,7 @@ This report presents technical evidence only. It does not determine copyright ow
 - [x] Add judge-facing report index, community signal index, simulated-data disclaimer, and appearance controls.
 - [x] Add Zerops challenge runbook covering service topology, deploy order, secrets, demo path, submission evidence, and rollback.
 - [x] Add GitHub Actions CI for backend tests and frontend production builds.
-- [ ] Execute an authenticated Zerops project deployment smoke test; requires the project credentials and public hostnames.
+- [x] Execute an authenticated Zerops project deployment smoke test against the public hostname, including fresh proof upload and incident comparison.
 
 ## Current repository verification
 
@@ -479,3 +479,5 @@ This report presents technical evidence only. It does not determine copyright ow
 - Started Phase 12 evidence reporting: server-backed report preview, generated PDF download, evidence-completeness warnings, shared preview/PDF context, report activity event, technical-only disclaimer, and rendered PDF visual QA.
 - Started Phase 13 security and quality hardening: upload content-signature validation, safe filenames and storage keys, malware-scan hook, in-process upload/report rate limits, security headers, configurable CORS and secure cookies, and upload security tests.
 - Started Phase 14 Zerops release configuration: infrastructure import manifest, separate web/API/worker deployment setups, managed PostgreSQL/Valkey/private object-storage boundaries, migration-before-rollout command, production secret mapping, secure cookie/CORS configuration, release checks, and rollback guidance.
+- Fixed Zerops incident comparison when the runtime FFmpeg binary is unavailable by adding a PyAV/NumPy frame-extraction fallback; deployed and verified fresh proof `CS-2026-0007` → incident `INC-2026-0003` completed with 100% visual, audio, and combined similarity.
+- Documented the remaining persistence limitation: historical media stored under ephemeral `/tmp` can disappear across redeploys, so stale incidents may remain failed until persistent object storage is configured.

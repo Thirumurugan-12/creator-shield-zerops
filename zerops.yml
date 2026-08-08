@@ -30,25 +30,19 @@ zerops:
     build:
       base: nodejs@22
       buildCommands:
-        - cd apps/web && npm install --no-audit --no-fund --ignore-scripts --prefer-offline
+        - cd apps/web && npm ci --no-audit --no-fund && npm run build
       deployFiles:
-        - apps/web/app
-        - apps/web/components
-        - apps/web/lib
+        - apps/web/.next
         - apps/web/package.json
         - apps/web/package-lock.json
         - apps/web/node_modules
         - apps/web/next.config.ts
-        - apps/web/next-env.d.ts
-        - apps/web/tsconfig.json
-        - apps/web/tailwind.config.ts
-        - apps/web/postcss.config.js
         - apps/web/start-zerops.sh
     run:
       base: nodejs@22
       start: /bin/sh /var/www/apps/web/start-zerops.sh
       envVariables:
-        NODE_ENV: development
+        NODE_ENV: production
         NEXT_PUBLIC_API_URL: ${CREATORSHIELD_API_URL}
       ports:
         - port: 3000

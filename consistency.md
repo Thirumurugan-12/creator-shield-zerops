@@ -132,3 +132,4 @@ Upload secured
 - S3 uploads do not send a KMS-only `ServerSideEncryption` request because Zerops Object Storage handles encryption at the bucket level.
 - The live Zerops worker is configured for 0.5–1 GB RAM; this prevents the runtime supervisor from being OOM-killed during background processing.
 - Zerops worker startup must use `/bin/sh /var/www/apps/api/start-worker-zerops.sh`; Zerops executes `run.start` directly and does not interpret `cd` as a shell builtin.
+- Worker media downloads retry four times with exponential backoff because private object storage may briefly lag after upload.

@@ -94,7 +94,23 @@ class StorageService:
         self._validate_key(key)
         with tempfile.NamedTemporaryFile(suffix=Path(key).suffix) as temporary:
             client = boto3.client("s3", endpoint_url=os.getenv("S3_ENDPOINT_URL") or None)
-            client.download_fileobj(os.environ["S3_BUCKET"], key, temporary)
+            last_error: Exception | None = None
+            for attempt in range(4):
+                try:
+                    temporary.seek(0)
+                    temporary.truncate(0)
+                    client.download_fileobj(os.environ["S3_BUCKET"], key, temporary)
+                    last_error = None
+                    break
+                except Exception as error:
+                    last_error = error
+                    if attempt == 3:
+                        raise
+                    # Zerops Object Storage can briefly lag after a successful
+                    # upload. Retry before marking a comparison as failed.
+                    time.sleep(2**attempt)
+            if last_error is not None:
+                raise last_error
             temporary.flush()
             yield Path(temporary.name)
 

@@ -117,5 +117,7 @@ class StorageService:
                 digest.update(chunk)
             temporary.flush()
             client = boto3.client("s3", endpoint_url=os.getenv("S3_ENDPOINT_URL") or None)
-            client.upload_file(temporary.name, os.environ["S3_BUCKET"], key, ExtraArgs={"ServerSideEncryption": "AES256"})
+            # Zerops Object Storage handles encryption at the bucket level and
+            # does not expose a KMS key for this request.
+            client.upload_file(temporary.name, os.environ["S3_BUCKET"], key)
         return total, key, digest.hexdigest()

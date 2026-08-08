@@ -129,3 +129,4 @@ Upload secured
 ## 2026-08-08 deployment consistency
 
 - Storage initialization validates all S3 endpoint, bucket, and credential references. Literal `${...}` placeholders are treated as missing configuration and use the local storage adapter instead of crashing uploads.
+- S3 uploads do not send a KMS-only `ServerSideEncryption` request because Zerops Object Storage handles encryption at the bucket level.

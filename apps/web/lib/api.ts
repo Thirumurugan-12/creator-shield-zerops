@@ -1,5 +1,7 @@
 export type Proof={proof_id:string;title:string;instagram_username:string;claimed_publication_date:string;claimed_publication_url:string;original_filename:string;file_size:number;sha256:string;status:string;current_step:string;progress:number;evidence_completeness:number;created_at:string;duration:number|null;width:number|null;height:number|null;codec?:string|null;frame_rate?:number|null;audio_present?:boolean|null;audio_fingerprint?:string|null;transcript_status?:string;keyframes:{timestamp:number;hash:string;storage_key:string;storage_url?:string}[];transcript:string|null;media_url:string;events?:{timestamp:string;message:string}[]};
-export const API=process.env.NEXT_PUBLIC_API_URL||"http://localhost:8000";
+// Keep browser requests same-origin in production so the session cookie stays
+// on the web host. Next rewrites /api requests to the private Zerops API host.
+export const API=process.env.NEXT_PUBLIC_API_URL||"/api";
 export type AuthUser={id:string;display_name:string;instagram_username:string;email:string};
 const options:RequestInit={credentials:"include",cache:"no-store"};
 export async function getMe():Promise<AuthUser>{const r=await fetch(`${API}/api/auth/me`,options);if(!r.ok)throw Error("Authentication required");return r.json()}

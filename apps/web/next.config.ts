@@ -1,16 +1,18 @@
 import type { NextConfig } from "next";
 
+const apiOrigin = process.env.CREATORSHIELD_API_URL || "http://api:8000";
+
 const nextConfig: NextConfig = {
   output: "standalone",
   async rewrites() {
     return [
       {
         source: "/api/media/:path*",
-        destination: "http://127.0.0.1:8000/media/:path*",
+        destination: `${apiOrigin}/media/:path*`,
       },
       {
         source: "/api/:path*",
-        destination: "http://127.0.0.1:8000/api/:path*",
+        destination: `${apiOrigin}/api/:path*`,
       },
     ];
   },

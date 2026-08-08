@@ -43,7 +43,8 @@ zerops:
       start: /bin/sh /var/www/apps/web/start-zerops.sh
       envVariables:
         NODE_ENV: production
-        NEXT_PUBLIC_API_URL: ${CREATORSHIELD_API_URL}
+        NEXT_PUBLIC_API_URL: /api
+        CREATORSHIELD_API_URL: http://api:8000
       ports:
         - port: 3000
           httpSupport: true
@@ -55,6 +56,7 @@ zerops:
         - pip install --target apps/api/.zerops-deps -r apps/api/requirements.txt
       deployFiles:
         - apps/api
+        - apps/api/start-zerops.sh
     run:
       os: ubuntu
       base: python@3.12
@@ -62,22 +64,17 @@ zerops:
         # Zerops runtime images do not permit apt repository updates. Keep
         # startup portable; media processing uses ffmpeg when present.
         - command -v ffmpeg || true
-      initCommands:
-        - cd /var/www/apps/api && PYTHONPATH=/var/www/apps/api:/var/www/apps/api/.zerops-deps alembic upgrade head
-      start: cd /var/www/apps/api && PYTHONPATH=/var/www/apps/api:/var/www/apps/api/.zerops-deps uvicorn app.main:app --host 0.0.0.0 --port 8000
+      start: /bin/sh /var/www/apps/api/start-zerops.sh
       envVariables:
         PYTHONPATH: /var/www/apps/api:/var/www/apps/api/.zerops-deps
-        STORAGE_BACKEND: s3
-        DATABASE_URL: ${CREATORSHIELD_DATABASE_URL}
-        REDIS_URL: ${CREATORSHIELD_REDIS_URL}
-        S3_ENDPOINT_URL: ${CREATORSHIELD_S3_ENDPOINT_URL}
-        S3_BUCKET: ${CREATORSHIELD_S3_BUCKET}
-        AWS_ACCESS_KEY_ID: ${CREATORSHIELD_S3_ACCESS_KEY_ID}
-        AWS_SECRET_ACCESS_KEY: ${CREATORSHIELD_S3_SECRET_ACCESS_KEY}
+        STORAGE_BACKEND: local
+        STORAGE_PATH: /tmp/creatorshield/uploads
+        DATABASE_URL: ${db_connectionString}
+        REDIS_URL: ${cache_connectionString}
         MEDIA_SIGNING_SECRET: ${CREATORSHIELD_MEDIA_SIGNING_SECRET}
         SESSION_SECRET: ${CREATORSHIELD_SESSION_SECRET}
-        SECURE_COOKIES: "true"
-        CORS_ORIGINS: ${CREATORSHIELD_WEB_URL}
+        SECURE_COOKIES: "false"
+        CORS_ORIGINS: https://web-2b19-3000.prg1.zerops.app
       ports:
         - port: 8000
           httpSupport: true

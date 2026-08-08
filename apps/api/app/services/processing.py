@@ -32,7 +32,7 @@ def media_binary(name: str) -> str:
         # so the extracted binaries land at the paths returned by it.
         download_dir = os.getenv(
             "CREATORSHIELD_FFMPEG_DIR",
-            "/var/www/apps/api/.zerops-deps/static_ffmpeg/bin/linux",
+            "/var/www/apps/api/vendor/ffmpeg/linux",
         )
         ffmpeg, ffprobe = run.get_or_fetch_platform_executables_else_raise(download_dir=download_dir)
         return ffmpeg if name == "ffmpeg" else ffprobe

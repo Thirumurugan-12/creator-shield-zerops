@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -26,7 +27,8 @@ def media_binary(name: str) -> str:
     try:
         from static_ffmpeg import run
 
-        ffmpeg, ffprobe = run.get_or_fetch_platform_executables_else_raise()
+        download_dir = os.getenv("CREATORSHIELD_FFMPEG_DIR", "/tmp/creatorshield-ffmpeg")
+        ffmpeg, ffprobe = run.get_or_fetch_platform_executables_else_raise(download_dir=download_dir)
         return ffmpeg if name == "ffmpeg" else ffprobe
     except Exception as error:
         raise RuntimeError(f"{name} is unavailable; media processing cannot start") from error

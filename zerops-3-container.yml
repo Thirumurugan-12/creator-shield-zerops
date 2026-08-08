@@ -4,6 +4,8 @@ zerops:
   - setup: app
     build:
       base: nodejs@22
+      buildCommands:
+        - cd apps/web && npm ci && npm run build
       deployFiles: .
       addToRunPrepare: ./docker-compose.zerops-3c.yml
     run:

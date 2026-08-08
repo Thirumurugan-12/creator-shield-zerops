@@ -18,7 +18,7 @@ COPY apps/api /app/apps/api
 COPY apps/web/package.json apps/web/package-lock.json /app/apps/web/
 RUN cd /app/apps/web && npm ci
 COPY apps/web /app/apps/web
-RUN cd /app/apps/web && npm run build
+COPY apps/web/.next /app/apps/web/.next
 
 COPY scripts/start-creatorshield-3c.sh /usr/local/bin/start-creatorshield-3c
 RUN chmod +x /usr/local/bin/start-creatorshield-3c \

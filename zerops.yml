@@ -54,7 +54,7 @@ zerops:
   # media tooling is detected by the application when already available.
   - setup: api
     build:
-      base: python@3.12
+      base: ubuntu/python@3.12
       buildCommands:
         - pip install --target apps/api/.zerops-deps -r apps/api/requirements.txt
       deployFiles:
@@ -62,7 +62,7 @@ zerops:
         - apps/api/start-zerops.sh
     run:
       os: ubuntu
-      base: python@3.12
+      base: ubuntu/python@3.12
       prepareCommands:
         # Zerops runtime images do not permit apt repository updates. Keep
         # startup portable; media processing uses ffmpeg when present.

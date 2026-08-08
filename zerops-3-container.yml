@@ -1,0 +1,25 @@
+# Three-container Zerops layout for the development/demo environment:
+# 1) app (web + API + worker), 2) single PostgreSQL, 3) single Valkey.
+zerops:
+  - setup: app
+    build:
+      base: nodejs@22
+      deployFiles: .
+      addToRunPrepare: ./docker-compose.zerops-3c.yml
+    run:
+      base: docker@26.1
+      prepareCommands:
+        - docker compose -f /var/www/docker-compose.zerops-3c.yml build app
+      start: docker compose -f /var/www/docker-compose.zerops-3c.yml up --force-recreate app
+      envVariables:
+        DATABASE_URL: ${db_connectionString}
+        REDIS_URL: ${cache_connectionString}
+        STORAGE_BACKEND: local
+        STORAGE_PATH: /data/uploads
+        MEDIA_SIGNING_SECRET: ${CREATORSHIELD_MEDIA_SIGNING_SECRET}
+        SESSION_SECRET: ${CREATORSHIELD_SESSION_SECRET}
+        CORS_ORIGINS: http://localhost:3000
+        SECURE_COOKIES: "false"
+      ports:
+        - port: 3000
+          httpSupport: true

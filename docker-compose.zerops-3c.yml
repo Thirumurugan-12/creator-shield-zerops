@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.zerops-3c
+    network_mode: host
+    environment:
+      DATABASE_URL:
+      REDIS_URL:
+      STORAGE_BACKEND:
+      STORAGE_PATH:
+      MEDIA_SIGNING_SECRET:
+      SESSION_SECRET:
+      CORS_ORIGINS:
+      SECURE_COOKIES:
+    volumes:
+      - creatorshield-data:/data
+
+volumes:
+  creatorshield-data:

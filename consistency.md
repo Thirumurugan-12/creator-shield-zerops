@@ -110,3 +110,10 @@ Upload secured
 - Hackathon-facing navigation routes must be functional: Reports reads incident records, Community Intelligence exposes only labelled simulated signals, and Settings reads the authenticated profile and controls appearance.
 - Submission documentation must explain why Zerops is materially involved in the product architecture, not merely name it as a hosting provider.
 - Docker Compose has been configured but requires a running Docker daemon for container execution.
+
+## Three-container demo deployment convention
+
+- `zerops-3-container-import.yaml` is a demo-only infrastructure definition: `app`, `db`, and `cache` are each pinned to one container.
+- `Dockerfile.zerops-3c` and `docker-compose.zerops-3c.yml` intentionally run the Next.js web server, FastAPI API, and background worker in one app container.
+- The combined app uses `NEXT_PUBLIC_API_URL=/api`; `apps/web/next.config.ts` proxies `/api` and `/api/media` to the internal FastAPI listener.
+- This layout uses local app storage and is not production HA. Restore separate web/API/worker services, object storage, and HA database/cache before production deployment.

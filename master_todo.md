@@ -8,6 +8,16 @@ This is the source-of-truth delivery plan for CreatorShield. It combines the ori
 - `[~]` Partially implemented or currently in progress
 - `[ ]` Planned
 
+## Current deployment milestone — three-container demo layout
+
+- [x] Add a single-node PostgreSQL import definition for development/demo use.
+- [x] Add a single-node Valkey import definition for development/demo use.
+- [x] Add a combined Docker app image for Next.js, FastAPI, and the worker.
+- [x] Add same-origin `/api` proxying so the combined app uses one public port.
+- [x] Validate the combined Compose configuration, frontend production build, and backend compilation.
+- [~] Import the new three-container project into Zerops and run the authenticated smoke test.
+- [ ] Re-enable multi-container HA services before production use.
+
 ## Product guardrails
 
 - [ ] CreatorShield must present technical evidence, not legal ownership decisions.

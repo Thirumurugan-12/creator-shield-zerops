@@ -135,5 +135,9 @@ class StorageService:
             client = boto3.client("s3", endpoint_url=os.getenv("S3_ENDPOINT_URL") or None)
             # Zerops Object Storage handles encryption at the bucket level and
             # does not expose a KMS key for this request.
-            client.upload_file(temporary.name, os.environ["S3_BUCKET"], key)
+            # Zerops Object Storage accepts single-request PUT reliably for
+            # these bounded uploads; avoid multipart state that can return a
+            # successful upload while the object is not readable immediately.
+            temporary.seek(0)
+            client.put_object(Bucket=os.environ["S3_BUCKET"], Key=key, Body=temporary)
         return total, key, digest.hexdigest()

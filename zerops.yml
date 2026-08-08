@@ -32,14 +32,22 @@ zerops:
       buildCommands:
         - cd apps/web && npm install --no-audit --no-fund --ignore-scripts --prefer-offline
       deployFiles:
+        - apps/web/app
+        - apps/web/components
+        - apps/web/lib
         - apps/web/package.json
+        - apps/web/package-lock.json
         - apps/web/node_modules
         - apps/web/next.config.ts
+        - apps/web/next-env.d.ts
+        - apps/web/tsconfig.json
+        - apps/web/tailwind.config.ts
+        - apps/web/postcss.config.js
     run:
       base: nodejs@22
       start: /var/www/apps/web/node_modules/.bin/next dev /var/www/apps/web --hostname 0.0.0.0 --port 3000
       envVariables:
-        NODE_ENV: production
+        NODE_ENV: development
         NEXT_PUBLIC_API_URL: ${CREATORSHIELD_API_URL}
       ports:
         - port: 3000

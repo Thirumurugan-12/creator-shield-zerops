@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import uuid
 from datetime import datetime, timezone
@@ -41,6 +42,7 @@ app = FastAPI(title="CreatorShield API", version="1.0.0")
 cors_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",") if origin.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=cors_origins, allow_credentials=True, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "X-Requested-With"])
 app.include_router(auth_router)
+logger = logging.getLogger(__name__)
 
 
 @app.middleware("http")
@@ -77,6 +79,19 @@ def health(db: Session = Depends(get_db)) -> dict[str, str]:
 
 def mirror_media(db: Session, key: str, payload: bytes) -> None:
     db.merge(MediaBlob(storage_key=key, payload=payload))
+
+
+def save_upload_with_fallback(file: UploadFile, key: str, payload: bytes) -> tuple[int, str, str]:
+    """Save to object storage, retaining a DB-readable copy if the storage API is unavailable."""
+    file.file.seek(0)
+    try:
+        return storage.save(file.file, key)
+    except Exception:
+        # Zerops Object Storage can transiently reject a PUT while the rest of
+        # the request is healthy. The PostgreSQL mirror is the worker's shared
+        # read path, so an upload should still be accepted and processed.
+        logger.exception("Object storage upload failed for %s; using PostgreSQL media mirror", key)
+        return len(payload), key, hashlib.sha256(payload).hexdigest()
 
 
 @app.get("/api/proofs")
@@ -188,7 +203,7 @@ async def create_incident(
         file.file.seek(0)
         video_payload = file.file.read()
         file.file.seek(0)
-        size, video_key, digest = storage.save(file.file, video_key)
+        size, video_key, digest = save_upload_with_fallback(file, video_key, video_payload)
     except ValueError as error:
         raise HTTPException(413, str(error)) from error
     incident = Incident(incident_id=next_incident_id(db), user_id=user.id, proof_id=proof.id, suspicious_storage_key=video_key, suspicious_filename=video_filename, suspicious_file_size=size, suspicious_sha256=digest, suspicious_username=metadata.suspicious_username, claimed_publication_date=metadata.claimed_publication_date.isoformat(), suspicious_url=metadata.suspicious_url, caption=metadata.caption, notes=metadata.notes, status="queued", stage="queued", events_json=json.dumps([{ "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Suspicious copy secured in private storage" }]))
@@ -201,7 +216,7 @@ async def create_incident(
             evidence.file.seek(0)
             evidence_payload = evidence.file.read()
             evidence.file.seek(0)
-            evidence_size, evidence_key, evidence_digest = storage.save(evidence.file, evidence_key)
+            evidence_size, evidence_key, evidence_digest = save_upload_with_fallback(evidence, evidence_key, evidence_payload)
         except ValueError as error:
             raise HTTPException(413, str(error)) from error
         db.add(IncidentEvidence(incident_id=incident.id, storage_key=evidence_key, filename=evidence.filename or "evidence", content_type=evidence.content_type or "application/octet-stream", file_size=evidence_size, sha256=evidence_digest))
@@ -267,7 +282,7 @@ async def create_proof(
         file.file.seek(0)
         video_payload = file.file.read()
         file.file.seek(0)
-        size, storage_key, sha256 = storage.save(file.file, storage_key)
+        size, storage_key, sha256 = save_upload_with_fallback(file, storage_key, video_payload)
     except ValueError as error:
         raise HTTPException(413, str(error)) from error
     duplicate = db.scalar(select(ProofRecord).where(ProofRecord.user_id == user.id, ProofRecord.sha256 == sha256))

@@ -5,4 +5,4 @@ cd /var/www/apps/api
 export PYTHONPATH=/var/www/apps/api:/var/www/apps/api/.zerops-deps
 
 python -c 'from alembic.config import main; main()' upgrade head
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
